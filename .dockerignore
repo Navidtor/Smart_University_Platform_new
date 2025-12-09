@@ -1,0 +1,25 @@
+# Root dockerignore for Smart University Platform
+
+# Git metadata
+.git
+.gitignore
+
+# Maven build outputs
+target
+**/target
+
+# Node modules and frontend build outputs
+node_modules
+**/node_modules
+frontend/dist
+
+# IDE/project files
+.idea
+.vscode
+*.iml
+
+# Logs
+*.log
+
+# Misc
+.DS_Store

@@ -1,0 +1,474 @@
+# Smart University Microservices Platform
+## Presentation Document
+
+---
+
+# Slide 1: Title
+
+## Smart University Microservices Platform
+### Software Analysis and Design Course Project
+
+**Team Members:** [Your Name]  
+**Course:** Software Analysis and Design  
+**Instructor:** Dr. Feizi  
+**Date:** [Current Date]
+
+---
+
+# Slide 2: Project Overview
+
+## What is Smart University Platform?
+
+A **production-style microservices platform** for university management featuring:
+
+- 🔐 **Authentication & Authorization** - JWT-based with RBAC
+- 📅 **Resource Booking** - Rooms, labs with no overbooking
+- 🛒 **Marketplace** - Products, orders with Saga pattern
+- 📝 **Online Exams** - Create, start, submit with Circuit Breaker
+- 📊 **IoT Dashboard** - Live sensors and shuttle tracking
+- 📧 **Notifications** - Event-driven Observer pattern
+
+---
+
+# Slide 3: Architecture Overview
+
+## Microservices Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    React SPA (Frontend)                      │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    API Gateway (Spring Cloud)                │
+│              JWT Validation │ RBAC │ Routing                 │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│ Auth Service  │   │Booking Service│   │Market Service │
+│   (Users)     │   │  (Resources)  │   │   (Saga)      │
+└───────────────┘   └───────────────┘   └───────────────┘
+        │                     │                     │
+        ▼                     ▼                     ▼
+   [PostgreSQL]          [PostgreSQL]          [PostgreSQL]
+```
+
+---
+
+# Slide 4: Technology Stack
+
+## Technologies Used
+
+| Layer | Technology |
+|-------|------------|
+| **Backend** | Java 17, Spring Boot 3, Spring Cloud |
+| **Frontend** | React 18, TypeScript, Vite |
+| **Database** | PostgreSQL (per service) |
+| **Caching** | Redis (distributed cache) |
+| **Messaging** | RabbitMQ |
+| **Resilience** | Resilience4j |
+| **Containerization** | Docker, Docker Compose |
+| **Testing** | JUnit 5, Jest, MSW |
+
+---
+
+# Slide 5: Design Patterns Implemented
+
+## 7 Design Patterns
+
+| Pattern | Location | Purpose |
+|---------|----------|---------|
+| **Saga** | Marketplace → Payment | Distributed transactions |
+| **Circuit Breaker** | Exam → Notification | Fault tolerance |
+| **Observer** | RabbitMQ Events | Loose coupling |
+| **State** | Exam Lifecycle | State management |
+| **Strategy** | Payment Providers | Extensibility |
+| **Repository** | All Services | Data access |
+| **Factory** | ExamStateFactory | Object creation |
+
+---
+
+# Slide 6: Saga Pattern Implementation
+
+## Marketplace Checkout Saga
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    SAGA ORCHESTRATOR                      │
+│                  (Marketplace Service)                    │
+└──────────────────────────────────────────────────────────┘
+                          │
+    Step 1: Create Order (PENDING)
+                          │
+    Step 2: Authorize Payment ──────► Payment Service
+                          │
+    Step 3: Decrement Stock
+                          │
+    Step 4: Confirm Order (CONFIRMED)
+                          │
+    Step 5: Publish Event ──────────► RabbitMQ
+                          │
+         ┌────────────────┴────────────────┐
+         │         COMPENSATION            │
+         │  • Cancel Payment               │
+         │  • Mark Order CANCELED          │
+         └─────────────────────────────────┘
+```
+
+---
+
+# Slide 7: Circuit Breaker Pattern
+
+## Exam Service → Notification Service
+
+```java
+@CircuitBreaker(name = "notificationCb", fallbackMethod = "notifyFallback")
+public void notifyExamStart(UUID examId, String tenantId) {
+    // HTTP call to Notification Service
+}
+
+public void notifyFallback(UUID examId, String tenantId, Throwable t) {
+    log.warn("Notification failed for exam {}: {}", examId, t.getMessage());
+    // Exam still starts successfully!
+}
+```
+
+**Benefits:**
+- Exam start succeeds even if notifications fail
+- Prevents cascading failures
+- Automatic recovery when service is healthy
+
+---
+
+# Slide 8: Event-Driven Architecture
+
+## Observer Pattern via RabbitMQ
+
+```
+┌─────────────────┐     order.confirmed     ┌─────────────────┐
+│   Marketplace   │ ──────────────────────► │                 │
+│    Service      │                         │  Notification   │
+└─────────────────┘                         │    Service      │
+                                            │                 │
+┌─────────────────┐     exam.started        │  (Observer)     │
+│     Exam        │ ──────────────────────► │                 │
+│    Service      │                         └─────────────────┘
+└─────────────────┘                                 │
+                                                    ▼
+                                           NotificationLog
+                                              (Database)
+```
+
+---
+
+# Slide 9: State Pattern - Exam Lifecycle
+
+## Exam State Machine
+
+```
+    ┌─────────┐
+    │  DRAFT  │ ◄── Initial state
+    └────┬────┘
+         │ schedule()
+         ▼
+    ┌─────────────┐
+    │  SCHEDULED  │
+    └──────┬──────┘
+           │ start()
+           ▼
+    ┌─────────┐
+    │  LIVE   │ ◄── Accepts submissions
+    └────┬────┘
+         │ close()
+         ▼
+    ┌─────────┐
+    │ CLOSED  │ ◄── Final state
+    └─────────┘
+```
+
+---
+
+# Slide 10: Multi-Tenancy Strategy
+
+## Row-Level Tenant Isolation
+
+```sql
+-- Every tenant-bound table has tenant_id column
+CREATE TABLE products (
+    id UUID PRIMARY KEY,
+    tenant_id VARCHAR(100) NOT NULL,  -- Faculty identifier
+    name VARCHAR(255),
+    price DECIMAL(10,2),
+    stock INTEGER
+);
+
+-- All queries filter by tenant
+SELECT * FROM products WHERE tenant_id = 'engineering';
+```
+
+**Enforcement:**
+- JWT contains `tenant` claim
+- Gateway injects `X-Tenant-Id` header
+- Services filter all queries by tenant
+
+---
+
+# Slide 11: Security Architecture
+
+## JWT-Based Authentication & RBAC
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      JWT Token                           │
+├─────────────────────────────────────────────────────────┤
+│  {                                                       │
+│    "sub": "user-uuid",                                   │
+│    "role": "TEACHER",                                    │
+│    "tenant": "engineering",                              │
+│    "exp": 1234567890                                     │
+│  }                                                       │
+└─────────────────────────────────────────────────────────┘
+
+Gateway validates JWT and injects headers:
+  • X-User-Id
+  • X-User-Role  
+  • X-Tenant-Id
+```
+
+---
+
+# Slide 12: No-Overbooking Algorithm
+
+## Booking Service - Concurrency Safe
+
+```java
+@Transactional
+public Reservation createReservation(CreateReservationRequest req) {
+    // Pessimistic lock on resource
+    List<Reservation> overlapping = reservationRepository
+        .findOverlappingReservations(
+            req.getResourceId(),
+            req.getStartTime(),
+            req.getEndTime(),
+            tenantId
+        );
+    
+    if (!overlapping.isEmpty()) {
+        throw new ConflictException("Resource already reserved");
+    }
+    
+    // Safe to create reservation
+    return reservationRepository.save(reservation);
+}
+```
+
+---
+
+# Slide 13: Frontend Architecture
+
+## React SPA Structure
+
+```
+frontend/src/
+├── api/
+│   └── client.ts          # Axios with JWT injection
+├── state/
+│   └── AuthContext.tsx    # Global auth state
+├── pages/
+│   ├── LoginPage.tsx
+│   ├── RegisterPage.tsx
+│   ├── BookingPage.tsx
+│   ├── MarketplacePage.tsx
+│   ├── ExamsPage.tsx
+│   └── DashboardPage.tsx
+└── App.tsx                # Protected routes
+```
+
+---
+
+# Slide 14: Testing Strategy
+
+## Comprehensive Test Coverage
+
+| Type | Tool | Coverage |
+|------|------|----------|
+| **Backend Integration** | JUnit 5 + Spring Test | All services |
+| **Concurrency Tests** | Parallel threads | Booking overbooking |
+| **Saga Tests** | Integration | Success + compensation |
+| **Circuit Breaker Tests** | Resilience4j | Fallback behavior |
+| **Frontend Tests** | Jest + RTL + MSW | All pages |
+
+---
+
+# Slide 15: Non-Functional Requirements
+
+## NFR Compliance
+
+| NFR | Requirement | Implementation |
+|-----|-------------|----------------|
+| **NFR-S01** | 10x scalability | Stateless services |
+| **NFR-MT01** | Tenant isolation | Row-level + headers |
+| **NFR-P01** | <400ms response | Caching, indexes |
+| **NFR-SE01** | JWT + RBAC | Gateway + services |
+| **NFR-R01** | IoT isolation | Decoupled services |
+| **NFR-R02** | No overbooking | Pessimistic locking |
+| **NFR-MN01** | 5+ patterns | 7 patterns implemented |
+| **NFR-MN02** | ADRs | 5 ADRs documented |
+
+---
+
+# Slide 16: Docker Infrastructure
+
+## docker-compose.yml
+
+```yaml
+services:
+  # Databases (one per service)
+  auth-db, booking-db, market-db, payment-db, 
+  exam-db, notification-db, dashboard-db
+  
+  # Message Broker
+  rabbitmq (with management UI)
+  
+  # Microservices
+  auth-service, booking-service, marketplace-service,
+  payment-service, exam-service, notification-service,
+  dashboard-service
+  
+  # Gateway & Frontend
+  gateway-service, frontend (nginx)
+```
+
+**Start:** `docker compose up --build`
+
+---
+
+# Slide 17: Documentation Deliverables
+
+## Complete Documentation
+
+| Document | Description |
+|----------|-------------|
+| **README.md** | Project overview, setup, walkthrough |
+| **architecture.md** | C4 diagrams, patterns, NFR mapping |
+| **api-overview.md** | All HTTP endpoints documented |
+| **ADR-001** | Service boundaries |
+| **ADR-002** | Multi-tenancy strategy |
+| **ADR-003** | Saga vs 2PC |
+| **ADR-004** | Circuit Breaker placement |
+| **ADR-005** | Database-per-service |
+| **AI_Log.md** | AI interaction summary |
+| **Learning_Report.md** | Technical reflections |
+
+---
+
+# Slide 18: Demo Walkthrough
+
+## Live Demo Steps
+
+1. **Register** as TEACHER in `engineering` faculty
+2. **Login** and receive JWT
+3. **Create Resource** (Room 101)
+4. **Book Resource** - verify no overbooking
+5. **Create Product** in Marketplace
+6. **Checkout** - observe Saga flow
+7. **Create Exam** and **Start** - observe Circuit Breaker
+8. **View Dashboard** - live sensor updates
+
+---
+
+# Slide 19: Key Learnings
+
+## Technical Insights
+
+1. **Saga Pattern**
+   - Local transactions + compensations > global transactions
+   - Explicit domain states improve observability
+
+2. **Circuit Breaker**
+   - Critical vs non-critical dependency distinction
+   - Fallbacks must preserve important side effects
+
+3. **Event-Driven**
+   - Loose coupling enables independent evolution
+   - Events form natural audit trail
+
+4. **Multi-Tenancy**
+   - Tenant context as first-class concern
+   - Every query must respect tenant boundaries
+
+---
+
+# Slide 20: Conclusion
+
+## Project Summary
+
+✅ **7 Microservices** + API Gateway  
+✅ **7 Design Patterns** implemented  
+✅ **All NFRs** satisfied  
+✅ **Complete Documentation** with ADRs  
+✅ **Comprehensive Testing** (backend + frontend)  
+✅ **Docker Compose** for full deployment  
+✅ **React SPA** with protected routes  
+
+### Questions?
+
+---
+
+# Appendix A: API Endpoints Summary
+
+| Service | Endpoint | Method | Description |
+|---------|----------|--------|-------------|
+| Auth | /auth/register | POST | Register user |
+| Auth | /auth/login | POST | Login, get JWT |
+| Booking | /booking/resources | GET/POST | Resources CRUD |
+| Booking | /booking/reservations | POST | Create reservation |
+| Market | /market/products | GET/POST | Products CRUD |
+| Market | /market/orders/checkout | POST | Saga checkout |
+| Payment | /payment/payments/authorize | POST | Authorize payment |
+| Exam | /exam/exams | GET/POST | Exams CRUD |
+| Exam | /exam/exams/{id}/start | POST | Start exam |
+| Exam | /exam/exams/{id}/submit | POST | Submit answers |
+| Dashboard | /dashboard/sensors | GET | Sensor readings |
+| Dashboard | /dashboard/shuttle | GET | Shuttle position |
+
+---
+
+# Appendix B: Database Schema Overview
+
+## Per-Service Databases
+
+**Auth DB:** users (id, username, password_hash, role, tenant_id)
+
+**Booking DB:** resources, reservations
+
+**Market DB:** products, orders, order_items
+
+**Payment DB:** payments
+
+**Exam DB:** exams, questions, submissions
+
+**Notification DB:** notification_logs
+
+**Dashboard DB:** sensor_readings, shuttle_locations
+
+---
+
+# Appendix C: Message Queue Topics
+
+## RabbitMQ Configuration
+
+**Exchange:** `university.events` (topic)
+
+**Routing Keys:**
+- `market.order.confirmed` → Order completed
+- `exam.exam.started` → Exam went live
+
+**Queues:**
+- `notification.order.confirmed.queue`
+- `notification.exam.started.queue`
+
+**Consumer:** Notification Service (Observer)

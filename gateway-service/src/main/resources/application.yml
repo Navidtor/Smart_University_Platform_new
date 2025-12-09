@@ -1,0 +1,82 @@
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      routes:
+        # Health check routes (must be before main service routes)
+        - id: auth-health
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/auth/actuator/health
+          filters:
+            - RewritePath=/auth/actuator/health, /actuator/health
+        - id: booking-health
+          uri: ${BOOKING_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/booking/actuator/health
+          filters:
+            - RewritePath=/booking/actuator/health, /actuator/health
+        - id: market-health
+          uri: ${MARKETPLACE_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/market/actuator/health
+          filters:
+            - RewritePath=/market/actuator/health, /actuator/health
+        - id: exam-health
+          uri: ${EXAM_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/exam/actuator/health
+          filters:
+            - RewritePath=/exam/actuator/health, /actuator/health
+        - id: dashboard-health
+          uri: ${DASHBOARD_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/dashboard/actuator/health
+          filters:
+            - RewritePath=/dashboard/actuator/health, /actuator/health
+        # Main service routes
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/auth/**
+        - id: booking-service
+          uri: ${BOOKING_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/booking/**
+        - id: marketplace-service
+          uri: ${MARKETPLACE_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/market/**
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/payment/**
+        - id: exam-service
+          uri: ${EXAM_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/exam/**
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/notification/**
+        - id: dashboard-service
+          uri: ${DASHBOARD_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/dashboard/**
+      default-filters:
+        - RemoveRequestHeader=Cookie
+
+server:
+  port: ${SERVER_PORT:8080}
+
+security:
+  jwt:
+    # Must match the secret used by the Auth service.
+    secret: ${JWT_SECRET:c21hcnQtdW5pdmVyc2l0eS1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjU2Yml0cw==}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
