@@ -8,7 +8,7 @@ Write-Host "===========================================" -ForegroundColor Cyan
 # Services accessible via exposed ports
 $exposedServices = @(
     @{ Name = "Gateway"; Port = 8080; HealthPath = "/actuator/health" },
-    @{ Name = "Frontend"; Port = 3000; HealthPath = "/" }
+    @{ Name = "Frontend"; Port = 3200; HealthPath = "/" }
 )
 
 # Internal services checked via Docker container health
