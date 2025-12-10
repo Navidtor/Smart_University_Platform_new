@@ -24,27 +24,31 @@ if !ERRORLEVEL! neq 0 (
 
 REM Check for Docker Compose (V2 or V1)
 set COMPOSE_CMD=
+
 docker compose version >nul 2>nul
 if !ERRORLEVEL! equ 0 (
     set COMPOSE_CMD=docker compose
-) else (
-    where docker-compose >nul 2>nul
-    if !ERRORLEVEL! equ 0 (
-        set COMPOSE_CMD=docker-compose
-    ) else (
-        echo Error: Docker Compose is required but not installed.
-        echo Please install Docker Compose V2 (docker compose) or V1 (docker-compose).
-        exit /b 1
-    )
+    goto :compose_found
 )
 
+where docker-compose >nul 2>nul
+if !ERRORLEVEL! equ 0 (
+    set COMPOSE_CMD=docker-compose
+    goto :compose_found
+)
+
+echo Error: Docker Compose is required but not installed.
+echo Please install Docker Compose V2 (docker compose) or V1 (docker-compose).
+exit /b 1
+
+:compose_found
 echo.
-echo ==^> Starting full stack with %COMPOSE_CMD% (builds images as needed)...
+echo ==^> Starting full stack with !COMPOSE_CMD! (builds images as needed)...
 
 if "%1"=="-d" (
-    %COMPOSE_CMD% up --build -d
+    !COMPOSE_CMD! up --build -d
 ) else (
-    %COMPOSE_CMD% up --build
+    !COMPOSE_CMD! up --build
 )
 
 endlocal

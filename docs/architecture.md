@@ -224,7 +224,7 @@ sequenceDiagram
 
     activate BS
     BS->>BDB: BEGIN TX
-    BS->>BDB: SELECT reservations WHERE<br/>resourceId = ? AND tenant_id = ?<br/>AND endTime > startTime<br/>AND startTime &lt; endTime<br/>(FOR UPDATE)
+    BS->>BDB: SELECT reservations WHERE resourceId=? AND tenant_id=? AND time overlap (FOR UPDATE)
     alt overlapping reservations found
         BDB-->>BS: rows with overlaps
         BS-->>GW: 409 CONFLICT (resource already reserved)
