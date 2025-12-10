@@ -44,7 +44,7 @@ check_service "Payment Service" "http://localhost:8084/actuator/health"
 check_service "Exam Service" "http://localhost:8085/actuator/health"
 check_service "Notification Service" "http://localhost:8086/actuator/health"
 check_service "Dashboard Service" "http://localhost:8087/actuator/health"
-check_service "Frontend" "http://localhost:3000/"
+check_service "Frontend" "http://localhost:3200/"
 
 echo -e "\n${YELLOW}🔧 Checking Infrastructure...${NC}"
 
