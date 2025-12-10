@@ -335,7 +335,7 @@ public Reservation createReservation(CreateReservationRequest req) {
 docker compose up --build
 
 # نقاط دسترسی:
-# - فرانت‌اند: http://localhost:3000
+# - فرانت‌اند: http://localhost:3500
 # - API Gateway: http://localhost:8080
 # - RabbitMQ UI: http://localhost:15672 (guest/guest)
 ```

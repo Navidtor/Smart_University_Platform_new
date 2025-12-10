@@ -10,7 +10,11 @@ REM
 
 setlocal
 
-echo ==> Checking required tools...
+REM Change to project root directory (parent of scripts folder)
+cd /d "%~dp0.."
+
+echo.
+echo ==^> Checking required tools...
 
 where docker >nul 2>nul
 if %ERRORLEVEL% neq 0 (
@@ -18,10 +22,29 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-echo ==> Starting full stack with docker-compose (builds images as needed)...
+REM Check for Docker Compose (V2 or V1)
+set COMPOSE_CMD=
+docker compose version >nul 2>nul
+if %ERRORLEVEL% equ 0 (
+    set COMPOSE_CMD=docker compose
+) else (
+    where docker-compose >nul 2>nul
+    if %ERRORLEVEL% equ 0 (
+        set COMPOSE_CMD=docker-compose
+    ) else (
+        echo Error: Docker Compose is required but not installed.
+        echo Please install Docker Compose V2 (docker compose) or V1 (docker-compose).
+        exit /b 1
+    )
+)
+
+echo.
+echo ==^> Starting full stack with %COMPOSE_CMD% (builds images as needed)...
 
 if "%1"=="-d" (
-    docker compose up --build -d
+    %COMPOSE_CMD% up --build -d
 ) else (
-    docker compose up --build
+    %COMPOSE_CMD% up --build
 )
+
+endlocal

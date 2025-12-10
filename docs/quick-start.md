@@ -28,7 +28,7 @@ docker compose up --build
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Frontend SPA | http://localhost:3000 | - |
+| Frontend SPA | http://localhost:3500 | - |
 | API Gateway | http://localhost:8080 | - |
 | RabbitMQ UI | http://localhost:15672 | guest / guest |
 | Redis | localhost:6379 | - |
@@ -97,7 +97,7 @@ DETACH=1 ./scripts/start-platform.sh
 
 ### 1. Register a Teacher
 
-1. Open http://localhost:3000
+1. Open http://localhost:3500
 2. Click "Register"
 3. Fill in:
    - Username: `teacher1`
@@ -245,7 +245,7 @@ docker compose build --no-cache
 | Exam Service | 8085 | - |
 | Notification Service | 8086 | - |
 | Dashboard Service | 8087 | - |
-| Frontend | 80 | 3000 |
+| Frontend | 80 | 3500 |
 | RabbitMQ | 5672 | 5672 |
 | RabbitMQ UI | 15672 | 15672 |
 | Redis | 6379 | 6379 |
