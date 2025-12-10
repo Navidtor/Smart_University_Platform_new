@@ -36,7 +36,8 @@ foreach ($svc in $exposedServices) {
         if ($response.StatusCode -eq 200) {
             Write-Host "✅ UP" -ForegroundColor Green
             $healthyCount++
-        } else {
+        }
+        else {
             Write-Host "⚠️  HTTP $($response.StatusCode)" -ForegroundColor Yellow
         }
     }
@@ -54,9 +55,11 @@ foreach ($svc in $dockerServices) {
         if ($status -match "running") {
             Write-Host "✅ Running" -ForegroundColor Green
             $healthyCount++
-        } elseif ($status) {
+        }
+        elseif ($status) {
             Write-Host "⚠️  $status" -ForegroundColor Yellow
-        } else {
+        }
+        else {
             Write-Host "❌ Not found" -ForegroundColor Red
         }
     }
@@ -83,7 +86,8 @@ try {
     $redisPing = docker exec redis redis-cli ping 2>$null
     if ($redisPing -eq "PONG") {
         Write-Host "✅ UP (PONG received)" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "⚠️  No response" -ForegroundColor Yellow
     }
 }
@@ -102,7 +106,8 @@ foreach ($db in $databases) {
         $status = docker inspect --format "{{.State.Status}}" $db 2>$null
         if ($status -eq "running") {
             Write-Host "✅ Running" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "⚠️  $status" -ForegroundColor Yellow
         }
     }
@@ -122,8 +127,9 @@ Write-Host "`n   Services Healthy: $healthyCount / $totalCount ($percentage%)" -
 
 if ($healthyCount -eq $totalCount) {
     Write-Host "`n   🎉 All systems operational! Ready to test." -ForegroundColor Green
-    Write-Host "   🌐 Open: http://localhost:3000" -ForegroundColor Cyan
-} else {
+    Write-Host "   🌐 Open: http://localhost:3200" -ForegroundColor Cyan
+}
+else {
     Write-Host "`n   ⚠️  Some services are down. Run:" -ForegroundColor Yellow
     Write-Host "      docker compose logs -f [service-name]" -ForegroundColor Gray
 }

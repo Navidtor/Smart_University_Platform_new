@@ -105,7 +105,7 @@ echo -e "\n   Services Healthy: ${COLOR}$HEALTHY_COUNT / $TOTAL_COUNT ($PERCENTA
 
 if [ $HEALTHY_COUNT -eq $TOTAL_COUNT ]; then
     echo -e "\n   ${GREEN}🎉 All systems operational! Ready to test.${NC}"
-    echo -e "   ${CYAN}🌐 Open: http://localhost:3000${NC}"
+    echo -e "   ${CYAN}🌐 Open: http://localhost:3200${NC}"
 else
     echo -e "\n   ${YELLOW}⚠️  Some services are down. Run:${NC}"
     echo "      docker compose logs -f [service-name]"
