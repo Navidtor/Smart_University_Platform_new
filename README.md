@@ -146,14 +146,14 @@ Key endpoints:
 
 
 - API Gateway: http://localhost:8080
-- Frontend SPA: http://localhost:3500
+- Frontend SPA: http://localhost:3200
 - RabbitMQ management UI: http://localhost:15672 (guest/guest)
 
 ### End-to-End Usage Walkthrough
 
 Once `docker-compose up --build` is running:
 
-1. Open the SPA at **http://localhost:3500**.
+1. Open the SPA at **http://localhost:3200**.
 
 2. **Register a teacher user**
 
@@ -335,7 +335,7 @@ This walkthrough exercises:
 docker compose up --build
 
 # Access points:
-# - Frontend: http://localhost:3500
+# - Frontend: http://localhost:3200
 # - API Gateway: http://localhost:8080
 # - RabbitMQ UI: http://localhost:15672 (guest/guest)
 ```

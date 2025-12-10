@@ -325,7 +325,7 @@ services:
       gateway-service:
         condition: service_started
     ports:
-      - "3500:80"
+      - "3200:80"
 
 volumes:
   redis-data:
