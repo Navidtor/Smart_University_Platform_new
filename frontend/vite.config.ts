@@ -11,7 +11,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: parseInt(process.env.PORT || '5173'),
+    host: process.env.TEMPO === "true" ? '0.0.0.0' : undefined,
     // @ts-ignore
     allowedHosts: process.env.TEMPO === "true" ? true : undefined
   }

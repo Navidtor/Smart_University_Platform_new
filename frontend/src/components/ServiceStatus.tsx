@@ -27,7 +27,7 @@ export const ServiceStatus: React.FC = () => {
         { name: 'Dashboard', url: '/dashboard/actuator/health' },
       ];
 
-      const baseUrl = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
       
       const results = await Promise.all(
         endpoints.map(async (ep) => {
