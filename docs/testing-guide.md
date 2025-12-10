@@ -33,7 +33,7 @@ Expected output: All services showing "✅ UP"
 ### 3. Open Frontend
 
 ```powershell
-start http://localhost:3500
+start http://localhost:3200
 ```
 
 ---
