@@ -294,6 +294,42 @@ This walkthrough exercises:
 - All pages: Login, Register, Dashboard, Booking, Marketplace, Exams
 - Jest + React Testing Library + MSW tests
 
+### Frontend Enhancements (Phase A)
+- **Enhanced Toast System** (`Toast.tsx`)
+  - Dismissible notifications with close button
+  - Progress bar showing time remaining
+  - Pause on hover functionality
+  - Custom titles and configurable duration
+  - Slide-in/out animations
+  - Maximum 5 toasts limit
+  
+- **Improved Error Boundary** (`ErrorBoundary.tsx`)
+  - Auto-retry for transient network errors
+  - Retry counter with visual feedback
+  - "Reload Page" and "Copy Error" buttons
+  - Loading spinner during retry attempts
+  - Callbacks for error handling (`onError`, `onReset`)
+  
+- **Loading Skeletons** (`LoadingSkeleton.tsx`)
+  - Multiple skeleton types: card, row, text, avatar, button, metric, sensor, table, form
+  - `PageLoadingSkeleton` - Full page loading state
+  - `DashboardLoadingSkeleton` - Sensor grid loading
+  - `ListLoadingSkeleton` - List items loading
+  - `InlineSpinner` - Small inline spinner
+  - `LoadingOverlay` - Full-screen loading overlay
+  
+- **Service Health Dashboard** (`ServiceStatus.tsx`)
+  - Response time tracking per service
+  - "Degraded" status for slow services (>1000ms)
+  - Manual refresh with loading state
+  - Animated dropdown with status details
+  - `ServiceDashboard` component for full-page monitoring
+
+### Frontend Test Coverage
+- `Toast.test.tsx` - Toast notifications, dismissal, auto-dismiss, clear all
+- `ErrorBoundary.test.tsx` - Error catching, retry, callbacks
+- `LoadingSkeleton.test.tsx` - All skeleton types and loading components
+
 ### Design Patterns (7 Implemented)
 1. **Saga** – Marketplace checkout orchestration
 2. **Circuit Breaker** – Exam → Notification resilience
