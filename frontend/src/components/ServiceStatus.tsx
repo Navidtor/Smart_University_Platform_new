@@ -35,6 +35,29 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
 
   const checkHealth = useCallback(async () => {
     setIsRefreshing(true);
+    
+    // Demo mode: when running in Tempo canvas or when backend is unreachable from cloud
+    const isTempoCanvas = typeof window !== 'undefined' && 
+      window.location.hostname.includes('canvases.tempo.build');
+    
+    if (isTempoCanvas) {
+      // Show demo data in Tempo canvas since it can't reach localhost
+      const demoServices: ServiceHealth[] = [
+        { name: 'Gateway', status: 'up', responseTime: 45, lastChecked: new Date() },
+        { name: 'Auth', status: 'up', responseTime: 62, lastChecked: new Date() },
+        { name: 'Booking', status: 'up', responseTime: 58, lastChecked: new Date() },
+        { name: 'Marketplace', status: 'up', responseTime: 71, lastChecked: new Date() },
+        { name: 'Exam', status: 'up', responseTime: 55, lastChecked: new Date() },
+        { name: 'Dashboard', status: 'up', responseTime: 48, lastChecked: new Date() },
+        { name: 'Payment', status: 'up', responseTime: 52, lastChecked: new Date() },
+        { name: 'Notification', status: 'up', responseTime: 67, lastChecked: new Date() },
+      ];
+      setServices(demoServices);
+      setLastRefresh(new Date());
+      setIsRefreshing(false);
+      return;
+    }
+    
     const endpoints = [
       { name: 'Gateway', url: '/actuator/health' },
       { name: 'Auth', url: '/auth/actuator/health' },
@@ -381,6 +404,29 @@ export const ServiceDashboard: React.FC = () => {
 
   const checkAllServices = useCallback(async () => {
     setIsLoading(true);
+    
+    // Demo mode: when running in Tempo canvas or when backend is unreachable from cloud
+    const isTempoCanvas = typeof window !== 'undefined' && 
+      window.location.hostname.includes('canvases.tempo.build');
+    
+    if (isTempoCanvas) {
+      // Show demo data in Tempo canvas since it can't reach localhost
+      const demoServices: ServiceHealth[] = [
+        { name: 'API Gateway', status: 'up', responseTime: 45, lastChecked: new Date() },
+        { name: 'Auth Service', status: 'up', responseTime: 62, lastChecked: new Date() },
+        { name: 'Booking Service', status: 'up', responseTime: 58, lastChecked: new Date() },
+        { name: 'Marketplace Service', status: 'up', responseTime: 71, lastChecked: new Date() },
+        { name: 'Exam Service', status: 'up', responseTime: 55, lastChecked: new Date() },
+        { name: 'Dashboard Service', status: 'up', responseTime: 48, lastChecked: new Date() },
+        { name: 'Payment Service', status: 'up', responseTime: 52, lastChecked: new Date() },
+        { name: 'Notification Service', status: 'up', responseTime: 67, lastChecked: new Date() },
+      ];
+      setServices(demoServices);
+      setLastRefresh(new Date());
+      setIsLoading(false);
+      return;
+    }
+    
     const endpoints = [
       { name: 'API Gateway', url: '/actuator/health', description: 'Main entry point for all API requests' },
       { name: 'Auth Service', url: '/auth/actuator/health', description: 'Authentication and authorization' },
