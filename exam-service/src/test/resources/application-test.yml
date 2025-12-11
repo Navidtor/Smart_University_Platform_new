@@ -25,6 +25,10 @@ management:
       exposure:
         include: health,info
 
+notification:
+  service:
+    base-url: http://localhost:8086
+
 resilience4j:
   circuitbreaker:
     instances:

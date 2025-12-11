@@ -18,7 +18,10 @@ import com.smartuniversity.exam.web.dto.ExamDetailDto;
 import com.smartuniversity.exam.web.dto.ExamDto;
 import com.smartuniversity.exam.web.dto.QuestionDto;
 import com.smartuniversity.exam.web.dto.SubmitExamRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,25 +37,29 @@ import java.util.stream.Collectors;
 @Service
 public class ExamService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ExamService.class);
+
     private final ExamRepository examRepository;
     private final SubmissionRepository submissionRepository;
     private final ExamStateFactory examStateFactory;
     private final NotificationClient notificationClient;
-    private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
+    
+    // Optional: only available when RabbitMQ is configured
+    private final RabbitTemplate rabbitTemplate;
 
     public ExamService(ExamRepository examRepository,
                        SubmissionRepository submissionRepository,
                        ExamStateFactory examStateFactory,
                        NotificationClient notificationClient,
-                       RabbitTemplate rabbitTemplate,
-                       ObjectMapper objectMapper) {
+                       ObjectMapper objectMapper,
+                       @Autowired(required = false) RabbitTemplate rabbitTemplate) {
         this.examRepository = examRepository;
         this.submissionRepository = submissionRepository;
         this.examStateFactory = examStateFactory;
         this.notificationClient = notificationClient;
-        this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = objectMapper;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @Transactional(readOnly = true)
@@ -119,14 +126,18 @@ public class ExamService {
         // Notify Notification service with Circuit Breaker protection.
         notificationClient.notifyExamStarted(tenantId, saved.getId());
 
-        // Publish exam.started event.
-        ExamStartedEvent event = new ExamStartedEvent(
-                saved.getId(),
-                saved.getCreatorId(),
-                tenantId,
-                Instant.now()
-        );
-        rabbitTemplate.convertAndSend(MessagingConfig.EXCHANGE_NAME, "exam.exam.started", event);
+        // Publish exam.started event (only if RabbitMQ is available).
+        if (rabbitTemplate != null) {
+            ExamStartedEvent event = new ExamStartedEvent(
+                    saved.getId(),
+                    saved.getCreatorId(),
+                    tenantId,
+                    Instant.now()
+            );
+            rabbitTemplate.convertAndSend(MessagingConfig.EXCHANGE_NAME, "exam.exam.started", event);
+        } else {
+            logger.warn("RabbitTemplate not available - skipping exam.started event for exam {}", saved.getId());
+        }
 
         return toDto(saved);
     }
