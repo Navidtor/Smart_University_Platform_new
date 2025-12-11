@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,7 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+/**
+ * Tests Circuit Breaker behavior for NotificationClient.
+ * Uses MOCK web environment to ensure RestTemplateBuilder and other web beans are available.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
 @EnableAutoConfiguration(exclude = {RabbitAutoConfiguration.class})
 @ActiveProfiles("test")
 class NotificationClientCircuitBreakerTest {
