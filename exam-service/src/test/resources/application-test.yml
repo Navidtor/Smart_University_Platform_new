@@ -18,7 +18,6 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
-      - io.github.resilience4j.springboot3.fallback.autoconfigure.FallbackConfigurationOnMissingBean
 
 management:
   endpoints:
