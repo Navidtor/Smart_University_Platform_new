@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartuniversity.exam.domain.Exam;
 import com.smartuniversity.exam.domain.ExamStateType;
 import com.smartuniversity.exam.repository.ExamRepository;
+import com.smartuniversity.exam.repository.SubmissionRepository;
 import com.smartuniversity.exam.web.dto.CreateExamRequest;
 import com.smartuniversity.exam.web.dto.CreateQuestionRequest;
 import com.smartuniversity.exam.web.dto.SubmitExamRequest;
@@ -43,6 +44,9 @@ class ExamControllerIntegrationTest {
     private ExamRepository examRepository;
 
     @Autowired
+    private SubmissionRepository submissionRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private final String tenantId = "engineering";
@@ -51,6 +55,8 @@ class ExamControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Delete submissions first (they reference exams via foreign key)
+        submissionRepository.deleteAll();
         examRepository.deleteAll();
     }
 
