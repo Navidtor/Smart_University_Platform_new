@@ -38,4 +38,21 @@ if %ERRORLEVEL% neq 0 (
 
 echo ==> Frontend tests completed successfully.
 
+echo ==> Cleaning up generated test artifacts...
+
+REM Remove Maven target directories (compiled classes, test reports)
+for /d %%d in (auth-service booking-service dashboard-service exam-service gateway-service marketplace-service notification-service payment-service common-lib) do (
+    if exist "%%d\target" (
+        echo Removing %%d\target...
+        rmdir /s /q "%%d\target"
+    )
+)
+if exist "target" (
+    echo Removing root target...
+    rmdir /s /q "target"
+)
+
+echo ==> Cleanup complete.
+
 echo ==> All tests finished.
+
