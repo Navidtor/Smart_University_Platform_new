@@ -5,18 +5,16 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 /**
  * RabbitMQ configuration for the Exam service.
- * Only loaded when RabbitMQ is enabled via property.
+ * Only loaded in non-test profiles (i.e., not during unit tests).
  */
 @Configuration
-@ConditionalOnClass(ConnectionFactory.class)
-@ConditionalOnProperty(name = "spring.rabbitmq.enabled", havingValue = "true", matchIfMissing = true)
+@Profile("!test")
 public class MessagingConfig {
 
     public static final String EXCHANGE_NAME = "university.events";
