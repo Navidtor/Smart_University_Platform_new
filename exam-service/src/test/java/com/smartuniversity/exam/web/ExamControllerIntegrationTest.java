@@ -65,7 +65,7 @@ class ExamControllerIntegrationTest {
         CreateExamRequest create = new CreateExamRequest();
         create.setTitle("Midterm");
         create.setDescription("CS101 Midterm");
-        create.setStartTime(Instant.now());
+        create.setStartTime(Instant.now().plusSeconds(60)); // Use future time to pass @FutureOrPresent validation
         CreateQuestionRequest q = new CreateQuestionRequest();
         q.setText("What is Java?");
         create.setQuestions(List.of(q));
