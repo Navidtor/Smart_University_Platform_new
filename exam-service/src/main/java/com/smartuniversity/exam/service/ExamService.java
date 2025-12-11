@@ -3,7 +3,6 @@ package com.smartuniversity.exam.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartuniversity.common.events.ExamStartedEvent;
-import com.smartuniversity.exam.config.MessagingConfig;
 import com.smartuniversity.exam.domain.Exam;
 import com.smartuniversity.exam.domain.ExamStateType;
 import com.smartuniversity.exam.domain.Question;
@@ -134,7 +133,7 @@ public class ExamService {
                     tenantId,
                     Instant.now()
             );
-            rabbitTemplate.convertAndSend(MessagingConfig.EXCHANGE_NAME, "exam.exam.started", event);
+            rabbitTemplate.convertAndSend("university.events", "exam.exam.started", event);
         } else {
             logger.warn("RabbitTemplate not available - skipping exam.started event for exam {}", saved.getId());
         }
