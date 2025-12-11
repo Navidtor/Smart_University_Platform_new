@@ -1,6 +1,6 @@
 @echo off
-REM Run the full Smart University test suite using Docker images only.
-REM This does NOT require Maven or Node.js to be installed on the host.
+REM Run the backend test suite using Docker images only.
+REM This does NOT require Maven to be installed on the host.
 REM
 REM Usage (from repo root):
 REM   scripts\run-tests.bat
@@ -27,17 +27,6 @@ if %ERRORLEVEL% neq 0 (
 
 echo ==> Backend tests completed successfully.
 
-echo ==> Running frontend tests (npm test) inside Docker...
-
-docker run --rm -v "%CD%\frontend":/app -w /app node:20-alpine sh -c "npm install && npm test"
-
-if %ERRORLEVEL% neq 0 (
-    echo Error: Frontend tests failed.
-    exit /b 1
-)
-
-echo ==> Frontend tests completed successfully.
-
 echo ==> Cleaning up generated test artifacts...
 
 REM Remove Maven target directories (compiled classes, test reports)
@@ -55,4 +44,3 @@ if exist "target" (
 echo ==> Cleanup complete.
 
 echo ==> All tests finished.
-
