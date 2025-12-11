@@ -32,7 +32,7 @@ public class SensorReading {
     @Column(nullable = false, length = 200)
     private String label;
 
-    @Column(nullable = false)
+    @Column(name = "sensor_value", nullable = false)
     private double value;
 
     @Column(nullable = false, length = 16)
