@@ -35,6 +35,18 @@ spring:
             - Path=/dashboard/actuator/health
           filters:
             - RewritePath=/dashboard/actuator/health, /actuator/health
+        - id: payment-health
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/payment/actuator/health
+          filters:
+            - RewritePath=/payment/actuator/health, /actuator/health
+        - id: notification-health
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/notification/actuator/health
+          filters:
+            - RewritePath=/notification/actuator/health, /actuator/health
         # Main service routes
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
