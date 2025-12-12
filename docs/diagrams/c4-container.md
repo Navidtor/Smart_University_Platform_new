@@ -50,7 +50,7 @@ graph TB
         
         REDIS[("Redis<br/>Cache")]
         
-        MQ["RabbitMQ<br/>───────────<br/>Event Bus<br/>───────────<br/>:5672 / :15672"]
+        MQ["RabbitMQ<br/>───────────<br/>Event Bus<br/>───────────<br/>:5800 / :15800"]
     end
 
     %% User connections

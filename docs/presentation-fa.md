@@ -337,5 +337,5 @@ docker compose up --build
 # نقاط دسترسی:
 # - فرانت‌اند: http://localhost:3200
 # - API Gateway: http://localhost:8080
-# - RabbitMQ UI: http://localhost:15672 (guest/guest)
+# - RabbitMQ UI: http://localhost:15800 (guest/guest)
 ```

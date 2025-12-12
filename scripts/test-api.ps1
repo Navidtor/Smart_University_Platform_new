@@ -197,5 +197,5 @@ Write-Host "   • Booking: Resources and Reservations working" -ForegroundColor
 Write-Host "   • Marketplace: Products listing and Saga checkout" -ForegroundColor Green
 Write-Host "   • Exam: Exam CRUD and state management" -ForegroundColor Green
 
-Write-Host "`n🔗 Test in browser: http://localhost:3000" -ForegroundColor Yellow
+Write-Host "`n🔗 Test in browser: http://localhost:3200" -ForegroundColor Yellow
 Write-Host "   User: $testUser | Pass: $testPass | Tenant: $TENANT" -ForegroundColor Yellow

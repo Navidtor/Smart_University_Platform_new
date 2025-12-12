@@ -30,7 +30,7 @@ docker compose up --build
 |---------|-----|-------------|
 | Frontend SPA | http://localhost:3200 | - |
 | API Gateway | http://localhost:8080 | - |
-| RabbitMQ UI | http://localhost:15672 | guest / guest |
+| RabbitMQ UI | http://localhost:15800 | guest / guest |
 | Redis | localhost:6379 | - |
 
 ### Stop Everything
@@ -207,7 +207,7 @@ docker compose restart auth-db booking-db market-db payment-db exam-db notificat
 ### RabbitMQ Issues
 
 **Problem:** Messages not being delivered
-1. Open http://localhost:15672
+1. Open http://localhost:15800
 2. Login with guest/guest
 3. Check the "Queues" tab for message counts
 4. Check the "Exchanges" tab for `university.events`
@@ -246,8 +246,8 @@ docker compose build --no-cache
 | Notification Service | 8086 | - |
 | Dashboard Service | 8087 | - |
 | Frontend | 80 | 3200 |
-| RabbitMQ | 5672 | 5672 |
-| RabbitMQ UI | 15672 | 15672 |
+| RabbitMQ | 5800 | 5800 |
+| RabbitMQ UI | 15800 | 15800 |
 | Redis | 6379 | 6379 |
 | PostgreSQL (each) | 5432 | - |
 

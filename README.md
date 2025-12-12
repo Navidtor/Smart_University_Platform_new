@@ -147,7 +147,7 @@ Key endpoints:
 
 - API Gateway: http://localhost:8080
 - Frontend SPA: http://localhost:3200
-- RabbitMQ management UI: http://localhost:15672 (guest/guest)
+- RabbitMQ management UI: http://localhost:15800 (guest/guest)
 
 ### End-to-End Usage Walkthrough
 
@@ -373,7 +373,7 @@ docker compose up --build
 # Access points:
 # - Frontend: http://localhost:3200
 # - API Gateway: http://localhost:8080
-# - RabbitMQ UI: http://localhost:15672 (guest/guest)
+# - RabbitMQ UI: http://localhost:15800 (guest/guest)
 ```
 
 ## Documentation Links

@@ -143,7 +143,7 @@ MONITOR
 
 ## Verify RabbitMQ Events
 
-1. Open RabbitMQ UI: http://localhost:15672
+1. Open RabbitMQ UI: http://localhost:15800
 2. Login: `guest` / `guest`
 3. Go to "Exchanges" tab
 4. See `order.events` and `exam.events` exchanges

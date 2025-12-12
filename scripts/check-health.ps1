@@ -73,7 +73,7 @@ Write-Host "`n🔧 Checking Infrastructure..." -ForegroundColor Yellow
 # Check RabbitMQ
 Write-Host -NoNewline "   RabbitMQ                  "
 try {
-    $rabbit = Invoke-WebRequest -Uri "http://localhost:15672/" -TimeoutSec 5 -ErrorAction Stop
+    $rabbit = Invoke-WebRequest -Uri "http://localhost:15800/" -TimeoutSec 5 -ErrorAction Stop
     Write-Host "✅ UP (Web UI available)" -ForegroundColor Green
 }
 catch {

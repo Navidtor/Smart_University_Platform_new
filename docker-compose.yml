@@ -18,8 +18,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5800:5800"
+      - "15800:15800"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -225,7 +225,7 @@ services:
       DB_USER: market
       DB_PASSWORD: market
       RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
+      RABBITMQ_PORT: 5800
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
       PAYMENT_SERVICE_BASE_URL: http://payment-service:8084
@@ -269,7 +269,7 @@ services:
       DB_USER: exam
       DB_PASSWORD: exam
       RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
+      RABBITMQ_PORT: 5800
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
       NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
@@ -293,7 +293,7 @@ services:
       DB_USER: notification
       DB_PASSWORD: notification
       RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
+      RABBITMQ_PORT: 5800
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
       SERVER_PORT: 8086

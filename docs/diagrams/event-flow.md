@@ -226,7 +226,7 @@ market.exchange
 ## Monitoring
 
 ### RabbitMQ Management UI
-- URL: `http://localhost:15672`
+- URL: `http://localhost:15800`
 - Default credentials: `guest/guest`
 
 ### Key Metrics to Watch

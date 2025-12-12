@@ -12,7 +12,7 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
   rabbitmq:
     host: localhost
-    port: 5672
+    port: 5800
     username: guest
     password: guest
 
