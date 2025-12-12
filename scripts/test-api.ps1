@@ -112,8 +112,10 @@ if ($resources) {
 # Create a reservation (if resources exist)
 if ($resources -and $resources.Count -gt 0) {
     $resourceId = $resources[0].id
-    $startTime = (Get-Date).AddHours(1).ToUniversalTime().ToString("yyyy-MM-ddTHH:00:00Z")
-    $endTime = (Get-Date).AddHours(2).ToUniversalTime().ToString("yyyy-MM-ddTHH:00:00Z")
+    # Use random hours offset (24-168 hours) to avoid conflicts with previous test runs
+    $randomOffset = Get-Random -Minimum 24 -Maximum 168
+    $startTime = (Get-Date).AddHours($randomOffset).ToUniversalTime().ToString("yyyy-MM-ddTHH:00:00Z")
+    $endTime = (Get-Date).AddHours($randomOffset + 1).ToUniversalTime().ToString("yyyy-MM-ddTHH:00:00Z")
     
     $reservationBody = @{
         resourceId = $resourceId
