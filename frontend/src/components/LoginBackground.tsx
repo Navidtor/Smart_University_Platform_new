@@ -106,11 +106,7 @@ export const LoginBackground: React.FC = () => {
         className="grid-pattern left-[51px] top-[69px]"
         style={{
           transform: `translate(${(mousePos.x - 0.5) * 12}px, ${(mousePos.y - 0.5) * 12}px)`,
-        }}><div
-          style="background-color: white; width: 80px; height: 80px;"
-          data-tempoelementid="tempo-fbd4bdb0-7f9c-46e2-90cf-3b1554f4bf7c"></div><div
-          style="background-color: white; width: 80px; height: 80px;"
-          data-tempoelementid="tempo-685366f3-9033-4855-9da0-6de3797935e1"></div></div>
+        }} />
       {/* Floating geometric shapes */}
       <div className="shapes-container">
         {shapes.map((shape) => {
