@@ -125,10 +125,10 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'up': return '#10b981';
-      case 'degraded': return '#f59e0b';
-      case 'down': return '#ef4444';
-      default: return '#6b7280';
+      case 'up': return 'var(--success, #10b981)';
+      case 'degraded': return 'var(--warning, #f59e0b)';
+      case 'down': return 'var(--danger, #ef4444)';
+      default: return 'var(--muted, #6b7280)';
     }
   };
 
@@ -142,10 +142,10 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
   };
 
   const getOverallStatus = () => {
-    if (allDown) return { color: '#ef4444', text: 'Offline', bg: 'rgba(239, 68, 68, 0.15)' };
-    if (allHealthy) return { color: '#10b981', text: 'All Systems Operational', bg: 'rgba(16, 185, 129, 0.15)' };
-    if (hasIssues) return { color: '#f59e0b', text: 'Partial Outage', bg: 'rgba(245, 158, 11, 0.15)' };
-    return { color: '#6b7280', text: 'Checking...', bg: 'rgba(107, 114, 128, 0.15)' };
+    if (allDown) return { color: 'var(--danger, #ef4444)', text: 'Offline', bg: 'var(--danger-soft, rgba(239, 68, 68, 0.15))' };
+    if (allHealthy) return { color: 'var(--success, #10b981)', text: 'All Systems Operational', bg: 'var(--success-soft, rgba(16, 185, 129, 0.15))' };
+    if (hasIssues) return { color: 'var(--warning, #f59e0b)', text: 'Partial Outage', bg: 'var(--warning-soft, rgba(245, 158, 11, 0.15))' };
+    return { color: 'var(--muted, #6b7280)', text: 'Checking...', bg: 'var(--bg-elevated, rgba(107, 114, 128, 0.15))' };
   };
 
   const formatResponseTime = (ms?: number) => {
@@ -174,13 +174,14 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
           alignItems: 'center',
           gap: '0.5rem',
           background: overallStatus.bg,
-          border: `1px solid ${overallStatus.color}40`,
-          borderRadius: '999px',
-          padding: '0.3rem 0.85rem',
+          border: `1px solid var(--border, rgba(148, 163, 184, 0.2))`,
+          borderRadius: 'var(--radius, 10px)',
+          padding: '0.375rem 0.875rem',
           cursor: 'pointer',
-          color: '#e5e7eb',
+          color: 'var(--text, #e5e7eb)',
           fontSize: '0.75rem',
-          transition: 'all 0.15s ease',
+          fontWeight: 500,
+          transition: 'all 0.2s ease',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.borderColor = `${overallStatus.color}80`;
@@ -224,29 +225,30 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
           top: '100%',
           right: 0,
           marginTop: '0.5rem',
-          background: 'linear-gradient(to bottom right, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.95))',
-          border: '1px solid rgba(148, 163, 184, 0.3)',
-          borderRadius: '12px',
+          background: 'var(--bg-card, linear-gradient(to bottom right, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.95)))',
+          border: '1px solid var(--border, rgba(148, 163, 184, 0.3))',
+          borderRadius: 'var(--radius-lg, 16px)',
           padding: '0',
-          minWidth: '280px',
+          minWidth: '300px',
           zIndex: 100,
-          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
+          boxShadow: 'var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.5))',
           overflow: 'hidden',
           animation: 'fadeIn 0.2s ease',
         }}>
           {/* Header */}
           <div style={{
-            padding: '0.875rem 1rem',
-            borderBottom: '1px solid rgba(148, 163, 184, 0.2)',
+            padding: '1rem 1.25rem',
+            borderBottom: '1px solid var(--border, rgba(148, 163, 184, 0.2))',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            background: 'var(--bg-elevated, transparent)',
           }}>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#f9fafb' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text, #f9fafb)' }}>
                 Service Health
               </div>
-              <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted, #6b7280)', marginTop: '2px' }}>
                 Updated {formatLastRefresh()}
               </div>
             </div>
@@ -257,17 +259,18 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
               }}
               disabled={isRefreshing}
               style={{
-                background: 'rgba(56, 189, 248, 0.1)',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                borderRadius: '6px',
-                padding: '0.35rem 0.6rem',
+                background: 'var(--accent-soft, rgba(56, 189, 248, 0.1))',
+                border: '1px solid var(--border, rgba(56, 189, 248, 0.3))',
+                borderRadius: 'var(--radius, 8px)',
+                padding: '0.5rem 0.75rem',
                 cursor: isRefreshing ? 'not-allowed' : 'pointer',
-                color: '#38bdf8',
-                fontSize: '0.7rem',
+                color: 'var(--accent, #38bdf8)',
+                fontSize: '0.75rem',
+                fontWeight: 500,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.35rem',
-                transition: 'all 0.15s ease',
+                gap: '0.375rem',
+                transition: 'all 0.2s ease',
                 opacity: isRefreshing ? 0.6 : 1,
               }}
             >
@@ -291,21 +294,22 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
 
           {/* Status Banner */}
           <div style={{
-            padding: '0.625rem 1rem',
+            padding: '0.75rem 1.25rem',
             background: overallStatus.bg,
-            borderBottom: '1px solid rgba(148, 163, 184, 0.15)',
+            borderBottom: '1px solid var(--border, rgba(148, 163, 184, 0.15))',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.625rem',
           }}>
             <span style={{
               width: '10px',
               height: '10px',
               borderRadius: '50%',
               backgroundColor: overallStatus.color,
-              boxShadow: `0 0 8px ${overallStatus.color}60`,
+              boxShadow: `0 0 10px currentColor`,
+              color: overallStatus.color,
             }} />
-            <span style={{ fontSize: '0.8rem', color: overallStatus.color, fontWeight: 500 }}>
+            <span style={{ fontSize: '0.85rem', color: overallStatus.color, fontWeight: 600 }}>
               {overallStatus.text}
             </span>
           </div>
@@ -319,31 +323,31 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  padding: '0.5rem 1rem',
-                  fontSize: '0.8rem',
-                  transition: 'background-color 0.15s ease',
+                  padding: '0.625rem 1.25rem',
+                  fontSize: '0.85rem',
+                  transition: 'background-color 0.2s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.05)';
+                  e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(56, 189, 248, 0.05))';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                   <span style={{ 
                     color: getStatusColor(svc.status),
-                    fontSize: '0.9rem',
+                    fontSize: '1rem',
                   }}>
                     {getStatusIcon(svc.status)}
                   </span>
-                  <span style={{ color: '#e5e7eb' }}>{svc.name}</span>
+                  <span style={{ color: 'var(--text, #e5e7eb)', fontWeight: 500 }}>{svc.name}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
                   {showResponseTime && svc.responseTime !== undefined && (
                     <span style={{ 
-                      color: '#6b7280', 
-                      fontSize: '0.7rem',
+                      color: 'var(--muted, #6b7280)', 
+                      fontSize: '0.75rem',
                       fontFamily: 'monospace',
                     }}>
                       {formatResponseTime(svc.responseTime)}
@@ -354,7 +358,7 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
                     fontWeight: 600,
                     fontSize: '0.7rem',
                     textTransform: 'uppercase',
-                    minWidth: '50px',
+                    minWidth: '55px',
                     textAlign: 'right',
                   }}>
                     {svc.status === 'checking' ? '...' : svc.status}
@@ -366,12 +370,13 @@ export const ServiceStatus: React.FC<ServiceStatusProps> = ({
 
           {/* Footer */}
           <div style={{
-            padding: '0.625rem 1rem',
-            borderTop: '1px solid rgba(148, 163, 184, 0.15)',
-            fontSize: '0.7rem',
-            color: '#6b7280',
+            padding: '0.75rem 1.25rem',
+            borderTop: '1px solid var(--border, rgba(148, 163, 184, 0.15))',
+            fontSize: '0.75rem',
+            color: 'var(--muted, #6b7280)',
             display: 'flex',
             justifyContent: 'space-between',
+            background: 'var(--bg-elevated, transparent)',
           }}>
             <span>Auto-refresh: {refreshInterval / 1000}s</span>
             <span>{healthyCount} healthy • {degradedCount} degraded • {totalCount - healthyCount - degradedCount} down</span>
@@ -485,10 +490,10 @@ export const ServiceDashboard: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'up': return '#10b981';
-      case 'degraded': return '#f59e0b';
-      case 'down': return '#ef4444';
-      default: return '#6b7280';
+      case 'up': return 'var(--success, #10b981)';
+      case 'degraded': return 'var(--warning, #f59e0b)';
+      case 'down': return 'var(--danger, #ef4444)';
+      default: return 'var(--muted, #6b7280)';
     }
   };
 
@@ -514,91 +519,92 @@ export const ServiceDashboard: React.FC = () => {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '0.75rem',
-        marginBottom: '1rem',
+        gap: '1rem',
+        marginBottom: '1.25rem',
       }}>
         <div style={{
-          padding: '0.75rem',
-          borderRadius: '10px',
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
+          padding: '1rem',
+          borderRadius: 'var(--radius, 10px)',
+          background: 'var(--success-soft, rgba(16, 185, 129, 0.1))',
+          border: '1px solid var(--success, rgba(16, 185, 129, 0.3))',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--success, #10b981)' }}>
             {healthyCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Healthy</div>
+          <div style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--muted, #6b7280)' }}>Healthy</div>
         </div>
         <div style={{
-          padding: '0.75rem',
-          borderRadius: '10px',
-          background: 'rgba(245, 158, 11, 0.1)',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
+          padding: '1rem',
+          borderRadius: 'var(--radius, 10px)',
+          background: 'var(--warning-soft, rgba(245, 158, 11, 0.1))',
+          border: '1px solid var(--warning, rgba(245, 158, 11, 0.3))',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f59e0b' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--warning, #f59e0b)' }}>
             {degradedCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Degraded</div>
+          <div style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--muted, #6b7280)' }}>Degraded</div>
         </div>
         <div style={{
-          padding: '0.75rem',
-          borderRadius: '10px',
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
+          padding: '1rem',
+          borderRadius: 'var(--radius, 10px)',
+          background: 'var(--danger-soft, rgba(239, 68, 68, 0.1))',
+          border: '1px solid var(--danger, rgba(239, 68, 68, 0.3))',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--danger, #ef4444)' }}>
             {downCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Down</div>
+          <div style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--muted, #6b7280)' }}>Down</div>
         </div>
       </div>
 
       {/* Services Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '0.75rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '1rem',
       }}>
         {services.map((svc) => (
           <div 
             key={svc.name}
             style={{
-              padding: '0.875rem',
-              borderRadius: '10px',
-              border: `1px solid ${getStatusColor(svc.status)}40`,
-              background: `${getStatusColor(svc.status)}10`,
+              padding: '1rem 1.25rem',
+              borderRadius: 'var(--radius, 10px)',
+              border: `1px solid var(--border, rgba(148, 163, 184, 0.2))`,
+              background: 'var(--bg-elevated, rgba(15, 23, 42, 0.5))',
+              transition: 'all 0.2s ease',
             }}
           >
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-start',
-              marginBottom: '0.5rem',
+              marginBottom: '0.625rem',
             }}>
-              <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#e5e7eb' }}>
+              <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text, #e5e7eb)' }}>
                 {svc.name}
               </span>
               <span style={{
-                padding: '0.15rem 0.5rem',
-                borderRadius: '999px',
-                fontSize: '0.65rem',
+                padding: '0.25rem 0.625rem',
+                borderRadius: 'var(--radius, 999px)',
+                fontSize: '0.7rem',
                 fontWeight: 600,
                 textTransform: 'uppercase',
-                background: `${getStatusColor(svc.status)}20`,
+                background: svc.status === 'up' ? 'var(--success-soft)' : svc.status === 'degraded' ? 'var(--warning-soft)' : 'var(--danger-soft)',
                 color: getStatusColor(svc.status),
               }}>
                 {svc.status}
               </span>
             </div>
             {svc.responseTime !== undefined && (
-              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                Response: {svc.responseTime}ms
+              <div style={{ fontSize: '0.8rem', color: 'var(--muted, #6b7280)' }}>
+                Response: <span style={{ fontFamily: 'monospace' }}>{svc.responseTime}ms</span>
               </div>
             )}
             {svc.error && (
-              <div style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--danger, #ef4444)', marginTop: '0.375rem' }}>
                 {svc.error}
               </div>
             )}
@@ -608,9 +614,9 @@ export const ServiceDashboard: React.FC = () => {
 
       {lastRefresh && (
         <div style={{
-          marginTop: '1rem',
-          fontSize: '0.7rem',
-          color: '#6b7280',
+          marginTop: '1.25rem',
+          fontSize: '0.8rem',
+          color: 'var(--muted, #6b7280)',
           textAlign: 'center',
         }}>
           Last updated: {lastRefresh.toLocaleTimeString()}
