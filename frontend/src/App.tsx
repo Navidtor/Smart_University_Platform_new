@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { useAuth, AuthProvider } from './state/AuthContext';
+import { ThemeProvider } from './state/ThemeContext';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -9,6 +10,7 @@ import { MarketplacePage } from './pages/MarketplacePage';
 import { ExamsPage } from './pages/ExamsPage';
 import { ToastProvider } from './components/Toast';
 import { ServiceStatus } from './components/ServiceStatus';
+import { ThemeToggle } from './components/ThemeToggle';
 
 const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
@@ -48,6 +50,7 @@ const AppContent: React.FC = () => {
         </nav>
         <div className="app-nav-user">
           <ServiceStatus />
+          <ThemeToggle size="sm" />
           {token ? (
             <>
               <div className="app-nav-pill">
@@ -114,8 +117,10 @@ const AppContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 };

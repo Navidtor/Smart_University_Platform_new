@@ -62,28 +62,28 @@ const ToastItem: React.FC<{
   const getToastColors = (type: ToastType) => {
     const colors = {
       success: { 
-        bg: 'rgba(16, 185, 129, 0.15)', 
-        border: '#10b981',
-        icon: '#34d399',
-        progress: '#10b981'
+        bg: 'var(--success-soft, rgba(16, 185, 129, 0.15))', 
+        border: 'var(--success, #10b981)',
+        icon: 'var(--success, #34d399)',
+        progress: 'var(--success, #10b981)'
       },
       error: { 
-        bg: 'rgba(239, 68, 68, 0.15)', 
-        border: '#ef4444',
-        icon: '#f87171',
-        progress: '#ef4444'
+        bg: 'var(--danger-soft, rgba(239, 68, 68, 0.15))', 
+        border: 'var(--danger, #ef4444)',
+        icon: 'var(--danger, #f87171)',
+        progress: 'var(--danger, #ef4444)'
       },
       warning: { 
-        bg: 'rgba(245, 158, 11, 0.15)', 
-        border: '#f59e0b',
-        icon: '#fbbf24',
-        progress: '#f59e0b'
+        bg: 'var(--warning-soft, rgba(245, 158, 11, 0.15))', 
+        border: 'var(--warning, #f59e0b)',
+        icon: 'var(--warning, #fbbf24)',
+        progress: 'var(--warning, #f59e0b)'
       },
       info: { 
-        bg: 'rgba(56, 189, 248, 0.15)', 
-        border: '#38bdf8',
-        icon: '#7dd3fc',
-        progress: '#38bdf8'
+        bg: 'var(--info-soft, rgba(56, 189, 248, 0.15))', 
+        border: 'var(--accent, #38bdf8)',
+        icon: 'var(--accent, #7dd3fc)',
+        progress: 'var(--accent, #38bdf8)'
       },
     };
     return colors[type];
@@ -115,15 +115,16 @@ const ToastItem: React.FC<{
       onMouseLeave={() => setIsPaused(false)}
       style={{
         backgroundColor: colors.bg,
-        backdropFilter: 'blur(12px)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         border: `1px solid ${colors.border}`,
         borderLeft: `4px solid ${colors.border}`,
-        color: '#e5e7eb',
+        color: 'var(--text, #e5e7eb)',
         padding: '0',
-        borderRadius: '10px',
-        minWidth: '320px',
-        maxWidth: '420px',
-        boxShadow: `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(15, 23, 42, 0.6)`,
+        borderRadius: 'var(--radius-lg, 16px)',
+        minWidth: '340px',
+        maxWidth: '440px',
+        boxShadow: 'var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.4))',
         animation: toast.isExiting ? 'slideOut 0.3s ease-in forwards' : 'slideIn 0.3s ease-out',
         overflow: 'hidden',
         position: 'relative',
@@ -148,17 +149,17 @@ const ToastItem: React.FC<{
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ 
-            fontWeight: 600, 
-            fontSize: '0.875rem',
-            marginBottom: '2px',
-            color: '#f9fafb',
+            fontWeight: 700, 
+            fontSize: '0.9rem',
+            marginBottom: '4px',
+            color: 'var(--text, #f9fafb)',
           }}>
             {toast.title || getTitle(toast.type)}
           </div>
           <div style={{ 
-            fontSize: '0.8rem',
-            color: '#9ca3af',
-            lineHeight: 1.4,
+            fontSize: '0.85rem',
+            color: 'var(--muted, #9ca3af)',
+            lineHeight: 1.5,
             wordBreak: 'break-word',
           }}>
             {toast.message}
@@ -171,23 +172,23 @@ const ToastItem: React.FC<{
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#6b7280',
+            color: 'var(--muted, #6b7280)',
             cursor: 'pointer',
-            padding: '4px',
-            borderRadius: '4px',
+            padding: '6px',
+            borderRadius: 'var(--radius, 6px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'color 0.15s ease, background-color 0.15s ease',
+            transition: 'all 0.2s ease',
             marginTop: '-2px',
             marginRight: '-4px',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#e5e7eb';
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            e.currentTarget.style.color = 'var(--text, #e5e7eb)';
+            e.currentTarget.style.backgroundColor = 'var(--bg-hover, rgba(255, 255, 255, 0.1))';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#6b7280';
+            e.currentTarget.style.color = 'var(--muted, #6b7280)';
             e.currentTarget.style.backgroundColor = 'transparent';
           }}
           aria-label="Dismiss notification"
