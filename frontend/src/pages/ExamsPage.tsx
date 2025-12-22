@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useConfiguredApi } from '../api/client';
 import { useAuth } from '../state/AuthContext';
 import { useToast } from '../components/Toast';
@@ -35,6 +35,11 @@ const formatTimeRemaining = (seconds: number): string => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+/**
+ * ExamsPage component with FIXES:
+ * - FIX #4: Timer useEffect uses proper dependency (timerActive state)
+ * - FIX #5: handleStudentSubmit wrapped in useCallback with proper dependencies
+ */
 export const ExamsPage: React.FC = () => {
   const api = useConfiguredApi();
   const { role, userId } = useAuth();
@@ -60,10 +65,13 @@ export const ExamsPage: React.FC = () => {
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  // FIX #4: Add timerActive state to control timer lifecycle
+  const [timerActive, setTimerActive] = useState(false);
   const timerRef = useRef<number | null>(null);
 
   const isTeacherOrAdmin = role === 'TEACHER' || role === 'ADMIN';
 
+  // Load exams list
   useEffect(() => {
     let cancelled = false;
     const loadExams = async () => {
@@ -81,26 +89,73 @@ export const ExamsPage: React.FC = () => {
     return () => { cancelled = true; };
   }, [api]);
 
+  // FIX #4: Timer useEffect with proper dependency on timerActive
   useEffect(() => {
-    if (timeRemaining === null || timeRemaining <= 0) return;
+    // Only run if timer is active and there's time remaining
+    if (!timerActive || timeRemaining === null || timeRemaining <= 0) {
+      return;
+    }
+
     timerRef.current = window.setInterval(() => {
       setTimeRemaining(prev => {
-        if (prev === null || prev <= 0) {
-          if (timerRef.current) clearInterval(timerRef.current);
+        if (prev === null || prev <= 1) {
+          // Time's up - stop the timer
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          setTimerActive(false);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [timeRemaining !== null]);
 
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [timerActive]); // FIX #4: Only depend on timerActive, not timeRemaining
+
+  // FIX #5: Wrap handleStudentSubmit in useCallback with proper dependencies
+  const handleStudentSubmit = useCallback(async () => {
+    if (!loadedExam || hasSubmitted || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    const answers: Record<string, string> = {};
+    loadedExam.questions.forEach((q, idx) => { 
+      answers[`q${idx + 1}`] = answersByQuestion[q.id] ?? ''; 
+    });
+    
+    try {
+      await api.post(`/exam/exams/${loadedExam.id}/submit`, { answers });
+      setHasSubmitted(true);
+      showToast('Exam submitted!', 'success');
+      
+      // Stop the timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setTimerActive(false);
+      setTimeRemaining(null);
+    } catch (err: any) {
+      setStatus(err.response?.data?.message ?? 'Failed to submit');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [api, loadedExam, answersByQuestion, hasSubmitted, isSubmitting, showToast]);
+
+  // FIX #5: Auto-submit effect with proper dependencies
   useEffect(() => {
-    if (timeRemaining === 0 && loadedExam && !hasSubmitted) {
+    if (timeRemaining === 0 && loadedExam && !hasSubmitted && !isSubmitting) {
       handleStudentSubmit();
       showToast('Time up! Exam auto-submitted.', 'warning');
     }
-  }, [timeRemaining]);
+  }, [timeRemaining, loadedExam, hasSubmitted, isSubmitting, handleStudentSubmit, showToast]);
 
   const addQuestion = () => setQuestions(prev => [...prev, { text: '', type: 'TEXT' }]);
   const updateQuestion = (idx: number, text: string) => {
@@ -159,7 +214,12 @@ export const ExamsPage: React.FC = () => {
       setLoadedExam(res.data);
       setSelectedExamId(examId);
       setAnswersByQuestion({});
-      if (res.data.durationMinutes) setTimeRemaining(res.data.durationMinutes * 60);
+      
+      // FIX #4: Properly initialize timer
+      if (res.data.durationMinutes) {
+        setTimeRemaining(res.data.durationMinutes * 60);
+        setTimerActive(true); // Start the timer
+      }
     } catch (err: any) {
       setLoadedExam(null);
       setStatus(err.response?.data?.message ?? 'Failed to load exam');
@@ -168,28 +228,18 @@ export const ExamsPage: React.FC = () => {
     }
   };
 
-  const handleStudentSubmit = async () => {
-    if (!loadedExam || hasSubmitted) return;
-    setIsSubmitting(true);
-    const answers: Record<string, string> = {};
-    loadedExam.questions.forEach((q, idx) => { answers[`q${idx + 1}`] = answersByQuestion[q.id] ?? ''; });
-    try {
-      await api.post(`/exam/exams/${loadedExam.id}/submit`, { answers });
-      setHasSubmitted(true);
-      showToast('Exam submitted!', 'success');
-      if (timerRef.current) clearInterval(timerRef.current);
-      setTimeRemaining(null);
-    } catch (err: any) {
-      setStatus(err.response?.data?.message ?? 'Failed to submit');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleCloseExam = () => {
-    setLoadedExam(null); setSelectedExamId(null); setAnswersByQuestion({});
+    setLoadedExam(null); 
+    setSelectedExamId(null); 
+    setAnswersByQuestion({});
     setHasSubmitted(false);
-    if (timerRef.current) clearInterval(timerRef.current);
+    
+    // FIX #4: Properly clean up timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setTimerActive(false);
     setTimeRemaining(null);
   };
 

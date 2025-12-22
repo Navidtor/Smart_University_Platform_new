@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
  * 1. Using pessimistic locking (findByIdAndTenantIdForUpdate) to prevent race conditions
  * 2. Added order history endpoints (getUserOrders, getOrder)
  * 3. Early stock validation in createPendingOrder
+ * 4. FIX #3: toDto now includes createdAt
  * 
  * NOTE: checkout() intentionally does NOT have @Transactional because it calls
  * external services (payment). Each step has its own transaction boundary.
@@ -193,7 +194,7 @@ public class OrderSagaService {
     }
 
     /**
-     * NEW: Get user's order history
+     * Get user's order history
      */
     @Transactional(readOnly = true)
     public List<OrderDto> getUserOrders(String tenantId, UUID buyerId) {
@@ -204,7 +205,7 @@ public class OrderSagaService {
     }
 
     /**
-     * NEW: Get a specific order
+     * Get a specific order
      */
     @Transactional(readOnly = true)
     public OrderDto getOrder(String tenantId, UUID orderId, UUID buyerId) {
@@ -219,6 +220,9 @@ public class OrderSagaService {
         return toDto(order);
     }
 
+    /**
+     * FIX #3: Updated to include createdAt in the DTO
+     */
     public OrderDto toDto(Order order) {
         List<OrderItemDto> itemDtos = order.getItems().stream()
                 .map(i -> new OrderItemDto(
@@ -228,6 +232,13 @@ public class OrderSagaService {
                         i.getPrice()))
                 .collect(Collectors.toList());
 
-        return new OrderDto(order.getId(), order.getTotalAmount(), order.getStatus(), itemDtos);
+        // FIX #3: Now passing createdAt to constructor
+        return new OrderDto(
+                order.getId(), 
+                order.getTotalAmount(), 
+                order.getStatus(), 
+                itemDtos,
+                order.getCreatedAt()  // FIX #3: Added createdAt
+        );
     }
 }

@@ -17,6 +17,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * REST API for resources and reservations.
+ * 
+ * FIXES APPLIED:
+ * - FIX #8: toDto now includes resourceName for better UX
+ */
 @RestController
 @RequestMapping("/booking")
 public class BookingController {
@@ -42,7 +48,7 @@ public class BookingController {
     }
 
     /**
-     * NEW ENDPOINT: Get all reservations for the tenant (for calendar view)
+     * Get all reservations for the tenant (for calendar view)
      */
     @GetMapping("/reservations")
     public List<ReservationDto> listReservations(@RequestHeader("X-Tenant-Id") String tenantId) {
@@ -52,7 +58,7 @@ public class BookingController {
     }
 
     /**
-     * NEW ENDPOINT: Get user's reservations
+     * Get user's reservations
      */
     @GetMapping("/reservations/mine")
     public List<ReservationDto> getMyReservations(
@@ -73,7 +79,7 @@ public class BookingController {
     }
 
     /**
-     * NEW ENDPOINT: Cancel a reservation
+     * Cancel a reservation
      */
     @DeleteMapping("/reservations/{id}")
     public ResponseEntity<Void> cancelReservation(
@@ -84,10 +90,14 @@ public class BookingController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * FIX #8: Updated toDto to include resourceName
+     */
     private ReservationDto toDto(Reservation reservation) {
         return new ReservationDto(
                 reservation.getId(),
                 reservation.getResource().getId(),
+                reservation.getResource().getName(),  // FIX #8: Added resourceName
                 reservation.getUserId(),
                 reservation.getStartTime(),
                 reservation.getEndTime(),

@@ -5,10 +5,16 @@ import com.smartuniversity.booking.domain.ReservationStatus;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * DTO for Reservation responses.
+ * 
+ * FIX #8: Added resourceName for better UX in calendar view
+ */
 public class ReservationDto {
 
     private UUID id;
     private UUID resourceId;
+    private String resourceName;  // FIX #8: Added for better UX
     private UUID userId;
     private Instant startTime;
     private Instant endTime;
@@ -17,9 +23,22 @@ public class ReservationDto {
     public ReservationDto() {
     }
 
+    // Original constructor for backward compatibility
     public ReservationDto(UUID id, UUID resourceId, UUID userId, Instant startTime, Instant endTime, ReservationStatus status) {
         this.id = id;
         this.resourceId = resourceId;
+        this.userId = userId;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.status = status;
+    }
+
+    // FIX #8: New constructor with resourceName
+    public ReservationDto(UUID id, UUID resourceId, String resourceName, UUID userId, 
+                          Instant startTime, Instant endTime, ReservationStatus status) {
+        this.id = id;
+        this.resourceId = resourceId;
+        this.resourceName = resourceName;
         this.userId = userId;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -40,6 +59,15 @@ public class ReservationDto {
 
     public void setResourceId(UUID resourceId) {
         this.resourceId = resourceId;
+    }
+
+    // FIX #8: Getter and setter for resourceName
+    public String getResourceName() {
+        return resourceName;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
     }
 
     public UUID getUserId() {

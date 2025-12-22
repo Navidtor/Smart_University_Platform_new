@@ -27,20 +27,20 @@ services:
       retries: 5
       start_period: 30s
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
 
   auth-db:
     image: postgres:15
     container_name: auth-db
     environment:
       POSTGRES_DB: authdb
-      POSTGRES_USER: auth
-      POSTGRES_PASSWORD: auth
+      POSTGRES_USER: ${DB_USER:-auth}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-auth}
     volumes:
       - auth-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U auth -d authdb" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-auth} -d authdb" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -51,12 +51,12 @@ services:
     container_name: booking-db
     environment:
       POSTGRES_DB: bookingdb
-      POSTGRES_USER: booking
-      POSTGRES_PASSWORD: booking
+      POSTGRES_USER: ${DB_USER:-booking}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-booking}
     volumes:
       - booking-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U booking -d bookingdb" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-booking} -d bookingdb" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -67,12 +67,12 @@ services:
     container_name: market-db
     environment:
       POSTGRES_DB: marketdb
-      POSTGRES_USER: market
-      POSTGRES_PASSWORD: market
+      POSTGRES_USER: ${DB_USER:-market}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-market}
     volumes:
       - market-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U market -d marketdb" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-market} -d marketdb" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,12 +83,12 @@ services:
     container_name: payment-db
     environment:
       POSTGRES_DB: paymentdb
-      POSTGRES_USER: payment
-      POSTGRES_PASSWORD: payment
+      POSTGRES_USER: ${DB_USER:-payment}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-payment}
     volumes:
       - payment-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U payment -d paymentdb" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-payment} -d paymentdb" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -99,12 +99,12 @@ services:
     container_name: exam-db
     environment:
       POSTGRES_DB: examdb
-      POSTGRES_USER: exam
-      POSTGRES_PASSWORD: exam
+      POSTGRES_USER: ${DB_USER:-exam}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-exam}
     volumes:
       - exam-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U exam -d examdb" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-exam} -d examdb" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -115,12 +115,12 @@ services:
     container_name: notification-db
     environment:
       POSTGRES_DB: notificationdb
-      POSTGRES_USER: notification
-      POSTGRES_PASSWORD: notification
+      POSTGRES_USER: ${DB_USER:-notification}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-notification}
     volumes:
       - notification-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U notification -d notificationdb" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-notification} -d notificationdb" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -131,12 +131,12 @@ services:
     container_name: dashboard-db
     environment:
       POSTGRES_DB: dashboarddb
-      POSTGRES_USER: dashboard
-      POSTGRES_PASSWORD: dashboard
+      POSTGRES_USER: ${DB_USER:-dashboard}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dashboard}
     volumes:
       - dashboard-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U dashboard -d dashboarddb" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-dashboard} -d dashboarddb" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -163,7 +163,8 @@ services:
       dashboard-service:
         condition: service_started
     environment:
-      JWT_SECRET: "c21hcnQtdW5pdmVyc2l0eS1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjU2Yml0cw=="
+      # FIX #7: Use environment variable for JWT secret
+      JWT_SECRET: ${JWT_SECRET:-c21hcnQtdW5pdmVyc2l0eS1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjU2Yml0cw==}
       AUTH_SERVICE_URL: http://auth-service:8081
       BOOKING_SERVICE_URL: http://booking-service:8082
       MARKETPLACE_SERVICE_URL: http://marketplace-service:8083
@@ -187,9 +188,10 @@ services:
       DB_HOST: auth-db
       DB_PORT: 5432
       DB_NAME: authdb
-      DB_USER: auth
-      DB_PASSWORD: auth
-      JWT_SECRET: "c21hcnQtdW5pdmVyc2l0eS1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjU2Yml0cw=="
+      DB_USER: ${DB_USER:-auth}
+      DB_PASSWORD: ${DB_PASSWORD:-auth}
+      # FIX #7: Use environment variable for JWT secret
+      JWT_SECRET: ${JWT_SECRET:-c21hcnQtdW5pdmVyc2l0eS1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjU2Yml0cw==}
       JWT_EXPIRATION_MS: 3600000
       SERVER_PORT: 8081
 
@@ -205,8 +207,8 @@ services:
       DB_HOST: booking-db
       DB_PORT: 5432
       DB_NAME: bookingdb
-      DB_USER: booking
-      DB_PASSWORD: booking
+      DB_USER: ${DB_USER:-booking}
+      DB_PASSWORD: ${DB_PASSWORD:-booking}
       SERVER_PORT: 8082
       SPRING_PROFILES_ACTIVE: demo
 
@@ -228,15 +230,17 @@ services:
       DB_HOST: market-db
       DB_PORT: 5432
       DB_NAME: marketdb
-      DB_USER: market
-      DB_PASSWORD: market
+      DB_USER: ${DB_USER:-market}
+      DB_PASSWORD: ${DB_PASSWORD:-market}
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       PAYMENT_SERVICE_BASE_URL: http://payment-service:8084
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # FIX #2: Added Redis password
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
       SERVER_PORT: 8083
       SPRING_PROFILES_ACTIVE: demo
 
@@ -252,8 +256,8 @@ services:
       DB_HOST: payment-db
       DB_PORT: 5432
       DB_NAME: paymentdb
-      DB_USER: payment
-      DB_PASSWORD: payment
+      DB_USER: ${DB_USER:-payment}
+      DB_PASSWORD: ${DB_PASSWORD:-payment}
       SERVER_PORT: 8084
 
   exam-service:
@@ -272,12 +276,12 @@ services:
       DB_HOST: exam-db
       DB_PORT: 5432
       DB_NAME: examdb
-      DB_USER: exam
-      DB_PASSWORD: exam
+      DB_USER: ${DB_USER:-exam}
+      DB_PASSWORD: ${DB_PASSWORD:-exam}
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
       SERVER_PORT: 8085
       SPRING_PROFILES_ACTIVE: demo
@@ -296,12 +300,12 @@ services:
       DB_HOST: notification-db
       DB_PORT: 5432
       DB_NAME: notificationdb
-      DB_USER: notification
-      DB_PASSWORD: notification
+      DB_USER: ${DB_USER:-notification}
+      DB_PASSWORD: ${DB_PASSWORD:-notification}
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       SERVER_PORT: 8086
 
   dashboard-service:
@@ -316,8 +320,8 @@ services:
       DB_HOST: dashboard-db
       DB_PORT: 5432
       DB_NAME: dashboarddb
-      DB_USER: dashboard
-      DB_PASSWORD: dashboard
+      DB_USER: ${DB_USER:-dashboard}
+      DB_PASSWORD: ${DB_PASSWORD:-dashboard}
       SERVER_PORT: 8087
 
   frontend:
