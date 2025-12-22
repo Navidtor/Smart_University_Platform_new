@@ -13,11 +13,43 @@ import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID> {
 
+    /**
+     * Find all products for a tenant
+     */
     List<Product> findAllByTenantId(String tenantId);
 
+    /**
+     * Find a product by ID and tenant
+     */
     Optional<Product> findByIdAndTenantId(UUID id, String tenantId);
 
+    /**
+     * FIX: Find product with pessimistic write lock to prevent race conditions
+     * during stock updates. This ensures that concurrent checkouts don't
+     * oversell inventory.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select p from Product p where p.id = :id and p.tenantId = :tenantId")
-    Optional<Product> findByIdAndTenantIdForUpdate(@Param("id") UUID id, @Param("tenantId") String tenantId);
+    @Query("SELECT p FROM Product p WHERE p.id = :id AND p.tenantId = :tenantId")
+    Optional<Product> findByIdAndTenantIdForUpdate(
+            @Param("id") UUID id, 
+            @Param("tenantId") String tenantId);
+
+    /**
+     * Check if a product exists with the given name in a tenant
+     */
+    boolean existsByNameAndTenantId(String name, String tenantId);
+
+    /**
+     * Find products with low stock (for admin alerts)
+     */
+    @Query("SELECT p FROM Product p WHERE p.tenantId = :tenantId AND p.stock < :threshold")
+    List<Product> findLowStockProducts(
+            @Param("tenantId") String tenantId, 
+            @Param("threshold") int threshold);
+
+    /**
+     * Find products in stock
+     */
+    @Query("SELECT p FROM Product p WHERE p.tenantId = :tenantId AND p.stock > 0")
+    List<Product> findInStockByTenantId(@Param("tenantId") String tenantId);
 }
