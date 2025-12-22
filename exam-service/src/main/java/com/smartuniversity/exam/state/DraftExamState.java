@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * DRAFT exams cannot be started or submitted.
+ * DRAFT exams cannot be started, closed, or submitted.
  */
 public class DraftExamState implements ExamState {
 
@@ -18,6 +18,11 @@ public class DraftExamState implements ExamState {
     @Override
     public void start(Exam exam) {
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Draft exams cannot be started");
+    }
+
+    @Override
+    public void close(Exam exam) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Draft exams cannot be closed");
     }
 
     @Override
