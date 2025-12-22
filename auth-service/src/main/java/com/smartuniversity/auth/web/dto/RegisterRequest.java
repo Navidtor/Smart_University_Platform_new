@@ -1,27 +1,26 @@
 package com.smartuniversity.auth.web.dto;
 
-import com.smartuniversity.auth.domain.Role;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
  * Request body for user registration.
+ * 
+ * SECURITY FIX: Role field removed - all users register as STUDENT.
+ * Admin/Teacher roles must be assigned by an administrator.
  */
 public class RegisterRequest {
 
-    @NotBlank
-    @Size(min = 3, max = 100)
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 100, message = "Username must be between 3 and 100 characters")
     private String username;
 
-    @NotBlank
-    @Size(min = 6, max = 100)
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
     private String password;
 
-    @NotNull
-    private Role role;
-
-    @NotBlank
+    @NotBlank(message = "Tenant ID is required")
+    @Size(max = 64, message = "Tenant ID must not exceed 64 characters")
     private String tenantId;
 
     public String getUsername() {
@@ -38,14 +37,6 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
     }
 
     public String getTenantId() {

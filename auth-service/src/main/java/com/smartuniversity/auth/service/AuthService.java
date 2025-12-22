@@ -11,8 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
-
 @Service
 public class AuthService {
 
@@ -38,7 +36,9 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Optional.ofNullable(request.getRole()).orElse(Role.STUDENT));
+        // SECURITY FIX: Always assign STUDENT role on registration
+        // Admin/Teacher roles must be granted by an administrator
+        user.setRole(Role.STUDENT);
         user.setTenantId(request.getTenantId());
 
         User saved = userRepository.save(user);

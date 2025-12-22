@@ -26,6 +26,14 @@ import java.util.stream.Collectors;
 
 /**
  * Orchestrates the multi-step Saga for Marketplace checkout.
+ * 
+ * IMPROVEMENTS:
+ * 1. Using pessimistic locking (findByIdAndTenantIdForUpdate) to prevent race conditions
+ * 2. Added order history endpoints (getUserOrders, getOrder)
+ * 3. Early stock validation in createPendingOrder
+ * 
+ * NOTE: checkout() intentionally does NOT have @Transactional because it calls
+ * external services (payment). Each step has its own transaction boundary.
  */
 @Service
 public class OrderSagaService {
@@ -45,15 +53,20 @@ public class OrderSagaService {
         this.rabbitTemplate = rabbitTemplate;
     }
 
+    /**
+     * Saga orchestrator - intentionally NOT @Transactional as it calls external services.
+     * Each step (createPendingOrder, confirmOrderAndDecrementStock, markOrderCanceled)
+     * has its own transaction boundary.
+     */
     public OrderDto checkout(String tenantId, UUID buyerId, CheckoutRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one item is required");
         }
 
-        // Step 1: create pending order and items
+        // Step 1: create pending order and items (own transaction)
         Order order = createPendingOrder(tenantId, buyerId, request);
 
-        // Step 2: request payment authorization
+        // Step 2: request payment authorization (external call - no transaction)
         PaymentAuthorizationRequest paymentRequest = new PaymentAuthorizationRequest();
         paymentRequest.setOrderId(order.getId());
         paymentRequest.setUserId(buyerId);
@@ -150,11 +163,12 @@ public class OrderSagaService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Order is not pending");
         }
 
-        // Decrement stock; in this sample we rely on single-node execution and simple
-        // stock checks
+        // FIX: Use pessimistic locking to prevent race conditions
         for (OrderItem item : order.getItems()) {
             UUID productId = item.getProduct().getId();
-            Product product = productRepository.findByIdAndTenantId(productId, tenantId)
+            
+            // Use findByIdAndTenantIdForUpdate for pessimistic locking
+            Product product = productRepository.findByIdAndTenantIdForUpdate(productId, tenantId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
             if (product.getStock() < item.getQuantity()) {
@@ -176,6 +190,33 @@ public class OrderSagaService {
             order.setStatus(OrderStatus.CANCELED);
             orderRepository.save(order);
         });
+    }
+
+    /**
+     * NEW: Get user's order history
+     */
+    @Transactional(readOnly = true)
+    public List<OrderDto> getUserOrders(String tenantId, UUID buyerId) {
+        return orderRepository.findAllByTenantIdAndBuyerIdOrderByCreatedAtDesc(tenantId, buyerId)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * NEW: Get a specific order
+     */
+    @Transactional(readOnly = true)
+    public OrderDto getOrder(String tenantId, UUID orderId, UUID buyerId) {
+        Order order = orderRepository.findByIdAndTenantId(orderId, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+        
+        // Ensure user can only see their own orders
+        if (!order.getBuyerId().equals(buyerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+        
+        return toDto(order);
     }
 
     public OrderDto toDto(Order order) {

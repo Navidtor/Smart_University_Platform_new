@@ -4,11 +4,11 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
     volumes:
       - redis-data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5

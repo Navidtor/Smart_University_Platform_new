@@ -2,8 +2,6 @@ package com.smartuniversity.market.web;
 
 import com.smartuniversity.market.domain.Product;
 import com.smartuniversity.market.repository.ProductRepository;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import com.smartuniversity.market.service.OrderSagaService;
 import com.smartuniversity.market.web.dto.CheckoutRequest;
 import com.smartuniversity.market.web.dto.OrderDto;
@@ -12,15 +10,13 @@ import com.smartuniversity.market.web.dto.ProductRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +24,10 @@ import java.util.stream.Collectors;
 
 /**
  * REST API for Marketplace products and orders.
+ * 
+ * IMPROVEMENTS:
+ * - Added GET /orders/mine endpoint for order history
+ * - Added GET /orders/{id} endpoint for specific order
  */
 @RestController
 @RequestMapping("/market")
@@ -98,5 +98,40 @@ public class MarketplaceController {
         UUID buyerId = UUID.fromString(userIdHeader);
         OrderDto order = orderSagaService.checkout(tenantId, buyerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
+    }
+
+    /**
+     * NEW: Get user's order history
+     */
+    @GetMapping("/orders/mine")
+    @Operation(summary = "Get my orders", description = "Returns all orders for the current user")
+    public List<OrderDto> getMyOrders(
+            @RequestHeader("X-User-Id") String userIdHeader,
+            @RequestHeader("X-Tenant-Id") String tenantId) {
+        
+        if (!StringUtils.hasText(userIdHeader)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User ID required");
+        }
+        
+        UUID buyerId = UUID.fromString(userIdHeader);
+        return orderSagaService.getUserOrders(tenantId, buyerId);
+    }
+
+    /**
+     * NEW: Get a specific order
+     */
+    @GetMapping("/orders/{id}")
+    @Operation(summary = "Get order", description = "Returns a specific order by ID")
+    public OrderDto getOrder(
+            @PathVariable UUID id,
+            @RequestHeader("X-User-Id") String userIdHeader,
+            @RequestHeader("X-Tenant-Id") String tenantId) {
+        
+        if (!StringUtils.hasText(userIdHeader)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User ID required");
+        }
+        
+        UUID buyerId = UUID.fromString(userIdHeader);
+        return orderSagaService.getOrder(tenantId, id, buyerId);
     }
 }

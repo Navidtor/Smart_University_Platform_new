@@ -17,7 +17,7 @@ export const RegisterPage: React.FC = () => {
   const [tenantId, setTenantId] = useState('engineering');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'STUDENT' | 'TEACHER'>('STUDENT');
+  // REMOVED: Role selection - all users register as STUDENT
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
@@ -29,13 +29,11 @@ export const RegisterPage: React.FC = () => {
   const [shinePos, setShinePos] = useState<MousePosition>({ x: 50, y: 50 });
   const [isVisible, setIsVisible] = useState(false);
 
-  // Entrance animation
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
-  // 3D tilt effect handler
   const handleCardMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
     
@@ -46,11 +44,9 @@ export const RegisterPage: React.FC = () => {
     const mouseX = e.clientX - centerX;
     const mouseY = e.clientY - centerY;
     
-    // Calculate rotation (max 8 degrees for larger card)
     const rotateY = (mouseX / (rect.width / 2)) * 8;
     const rotateX = -(mouseY / (rect.height / 2)) * 8;
     
-    // Calculate shine position (0-100%)
     const shineX = ((e.clientX - rect.left) / rect.width) * 100;
     const shineY = ((e.clientY - rect.top) / rect.height) * 100;
     
@@ -75,33 +71,61 @@ export const RegisterPage: React.FC = () => {
       return;
     }
     
-    if (password.length < 4) {
-      setError('Password must be at least 4 characters');
+    // FIX: Match backend validation (6 characters minimum)
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    // Username validation
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters');
       return;
     }
     
     setLoading(true);
     try {
-      const res = await api.post('/auth/register', { username, password, tenantId, role });
+      // FIXED: No role field sent - backend assigns STUDENT automatically
+      const res = await api.post('/auth/register', { username, password, tenantId });
       const token = res.data.token as string;
       login(token, tenantId);
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message ?? 'Registration failed');
+      const message = err.response?.data?.message ?? 'Registration failed';
+      // Provide more helpful error messages
+      if (err.response?.status === 409) {
+        setError('This username is already taken in your faculty. Please choose another.');
+      } else if (err.response?.status === 400) {
+        setError(message);
+      } else {
+        setError('Unable to register. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // Password strength indicator
+  const getPasswordStrength = (pwd: string): { level: number; text: string; color: string } => {
+    if (pwd.length === 0) return { level: 0, text: '', color: '' };
+    if (pwd.length < 6) return { level: 1, text: 'Too short', color: 'var(--danger)' };
+    if (pwd.length < 8) return { level: 2, text: 'Weak', color: 'var(--warning)' };
+    if (pwd.length < 12 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) {
+      return { level: 3, text: 'Good', color: 'var(--success)' };
+    }
+    if (pwd.length >= 12 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd)) {
+      return { level: 4, text: 'Strong', color: 'var(--success)' };
+    }
+    return { level: 2, text: 'Fair', color: 'var(--warning)' };
+  };
+
+  const passwordStrength = getPasswordStrength(password);
+
   return (
     <div className="register-page-wrapper">
-      {/* Interactive Background */}
       <LoginBackground />
-      
-      {/* Cute Kittens - they close eyes when you type password */}
       <KittenStyle4Cartoon isPasswordFocused={isPasswordFocused} />
       
-      {/* Register Card with 3D tilt */}
       <div
         ref={cardRef}
         className={`register-card-3d ${isVisible ? 'visible' : ''}`}
@@ -121,7 +145,6 @@ export const RegisterPage: React.FC = () => {
             : 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)',
         }}
       >
-        {/* Shine effect overlay */}
         <div
           className="register-card-shine"
           style={{
@@ -134,7 +157,6 @@ export const RegisterPage: React.FC = () => {
           }}
         />
         
-        {/* Glow border effect */}
         <div
           className="register-card-glow"
           style={{
@@ -147,9 +169,7 @@ export const RegisterPage: React.FC = () => {
           }}
         />
         
-        {/* Card content */}
         <div className="register-card-content">
-          {/* Header with animated icon */}
           <div className="register-header">
             <div className="register-icon-wrapper">
               <div className="register-icon">✨</div>
@@ -157,47 +177,30 @@ export const RegisterPage: React.FC = () => {
               <div className="register-icon-ring ring-2" />
             </div>
             <h1 className="register-title">Create an account</h1>
-            <p className="register-subtitle">Join the Smart University platform and start your journey.</p>
+            <p className="register-subtitle">Join the Smart University platform as a student.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="register-form">
-            {/* Two-column layout for name fields */}
-            <div className="register-row">
-              <div className="form-field">
-                <label className="form-label">
-                  <span className="label-icon">👤</span>
-                  Username
-                </label>
-                <input
-                  className="form-input register-input"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoComplete="username"
-                  placeholder="Choose a username"
-                  required
-                />
-              </div>
-              
-              <div className="form-field">
-                <label className="form-label">
-                  <span className="label-icon">🎭</span>
-                  Role
-                </label>
-                <select
-                  className="form-input register-input"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as 'STUDENT' | 'TEACHER')}
-                >
-                  <option value="STUDENT">🎓 Student</option>
-                  <option value="TEACHER">👨‍🏫 Teacher</option>
-                </select>
-              </div>
+            <div className="form-field">
+              <label className="form-label">
+                <span className="label-icon">👤</span>
+                Username
+              </label>
+              <input
+                className="form-input register-input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                placeholder="Choose a username (min 3 characters)"
+                required
+                minLength={3}
+              />
             </div>
             
             <div className="form-field">
               <label className="form-label">
                 <span className="label-icon">🏛️</span>
-                Tenant / Faculty
+                Faculty / Department
               </label>
               <input
                 className="form-input register-input"
@@ -208,46 +211,64 @@ export const RegisterPage: React.FC = () => {
               />
             </div>
             
-            {/* Password fields in a row */}
-            <div className="register-row">
-              <div className="form-field">
-                <label className="form-label">
-                  <span className="label-icon">🔒</span>
-                  Password
-                </label>
-                <input
-                  className="form-input register-input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setIsPasswordFocused(true)}
-                  onBlur={() => setIsPasswordFocused(false)}
-                  autoComplete="new-password"
-                  placeholder="Create password"
-                  required
-                />
-              </div>
-              
-              <div className="form-field">
-                <label className="form-label">
-                  <span className="label-icon">🔐</span>
-                  Confirm
-                </label>
-                <input
-                  className="form-input register-input"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  onFocus={() => setIsPasswordFocused(true)}
-                  onBlur={() => setIsPasswordFocused(false)}
-                  autoComplete="new-password"
-                  placeholder="Confirm password"
-                  required
-                />
-              </div>
+            <div className="form-field">
+              <label className="form-label">
+                <span className="label-icon">🔒</span>
+                Password
+              </label>
+              <input
+                className="form-input register-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
+                autoComplete="new-password"
+                placeholder="Create password (min 6 characters)"
+                required
+                minLength={6}
+              />
+              {/* Password strength indicator */}
+              {password.length > 0 && (
+                <div className="password-strength">
+                  <div className="strength-bars">
+                    {[1, 2, 3, 4].map((level) => (
+                      <div
+                        key={level}
+                        className="strength-bar"
+                        style={{
+                          backgroundColor: level <= passwordStrength.level 
+                            ? passwordStrength.color 
+                            : 'var(--border)',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span style={{ color: passwordStrength.color, fontSize: '0.75rem' }}>
+                    {passwordStrength.text}
+                  </span>
+                </div>
+              )}
             </div>
             
-            {/* Password match indicator */}
+            <div className="form-field">
+              <label className="form-label">
+                <span className="label-icon">🔐</span>
+                Confirm Password
+              </label>
+              <input
+                className="form-input register-input"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
+                autoComplete="new-password"
+                placeholder="Confirm your password"
+                required
+              />
+            </div>
+            
             {confirmPassword && (
               <div className={`password-match ${password === confirmPassword ? 'match' : 'no-match'}`}>
                 <span className="match-icon">{password === confirmPassword ? '✓' : '✗'}</span>
@@ -261,12 +282,18 @@ export const RegisterPage: React.FC = () => {
                 {error}
               </div>
             )}
+
+            {/* Info box about roles */}
+            <div className="info-box">
+              <span className="info-icon">ℹ️</span>
+              <span>You'll be registered as a student. Need teacher access? Contact your department admin after registration.</span>
+            </div>
             
             <div className="register-footer">
               <button 
                 type="submit" 
                 className={`register-button ${loading ? 'loading' : ''}`}
-                disabled={loading}
+                disabled={loading || password !== confirmPassword || password.length < 6}
               >
                 <span className="button-text">
                   {loading ? 'Creating account…' : 'Create account'}
@@ -284,7 +311,6 @@ export const RegisterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Register page styles */}
       <style>{`
         .register-page-wrapper {
           position: relative;
@@ -301,7 +327,7 @@ export const RegisterPage: React.FC = () => {
         .register-card-3d {
           position: relative;
           width: 100%;
-          max-width: 520px;
+          max-width: 440px;
           z-index: 10;
           transform-style: preserve-3d;
           will-change: transform;
@@ -340,9 +366,7 @@ export const RegisterPage: React.FC = () => {
           border-radius: var(--radius-xl, 24px);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          box-shadow: 
-            var(--shadow-lg, 0 16px 48px rgba(0, 0, 0, 0.5)),
-            0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+          box-shadow: var(--shadow-lg, 0 16px 48px rgba(0, 0, 0, 0.5)), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
           overflow: hidden;
         }
 
@@ -377,9 +401,7 @@ export const RegisterPage: React.FC = () => {
           font-size: 1.5rem;
           background: linear-gradient(135deg, #8b5cf6, #6366f1);
           border-radius: 18px;
-          box-shadow: 
-            0 8px 32px rgba(139, 92, 246, 0.4),
-            0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+          box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
           animation: registerIconPulse 3s ease-in-out infinite;
           z-index: 2;
         }
@@ -431,18 +453,6 @@ export const RegisterPage: React.FC = () => {
           gap: 0.75rem;
         }
 
-        .register-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.75rem;
-        }
-
-        @media (max-width: 520px) {
-          .register-row {
-            grid-template-columns: 1fr;
-          }
-        }
-
         .register-form .form-label {
           display: flex;
           align-items: center;
@@ -468,9 +478,27 @@ export const RegisterPage: React.FC = () => {
 
         .register-input:focus {
           border-color: #8b5cf6 !important;
-          box-shadow: 
-            0 0 0 3px rgba(139, 92, 246, 0.15),
-            0 0 20px rgba(139, 92, 246, 0.1) !important;
+          box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15), 0 0 20px rgba(139, 92, 246, 0.1) !important;
+        }
+
+        .password-strength {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 0.375rem;
+        }
+
+        .strength-bars {
+          display: flex;
+          gap: 4px;
+          flex: 1;
+        }
+
+        .strength-bar {
+          height: 4px;
+          flex: 1;
+          border-radius: 2px;
+          transition: background-color 0.3s ease;
         }
 
         .password-match {
@@ -496,6 +524,24 @@ export const RegisterPage: React.FC = () => {
 
         .match-icon {
           font-size: 1rem;
+        }
+
+        .info-box {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+          padding: 0.625rem 0.875rem;
+          background: var(--info-soft, rgba(56, 189, 248, 0.1));
+          border: 1px solid var(--accent, #38bdf8);
+          border-radius: var(--radius, 10px);
+          font-size: 0.75rem;
+          color: var(--muted, #94a3b8);
+          line-height: 1.4;
+        }
+
+        .info-icon {
+          flex-shrink: 0;
+          font-size: 0.875rem;
         }
 
         .register-error {
@@ -547,55 +593,23 @@ export const RegisterPage: React.FC = () => {
           cursor: pointer;
           overflow: hidden;
           transition: all 0.3s ease;
-          box-shadow: 
-            0 8px 24px rgba(139, 92, 246, 0.35),
-            0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+          box-shadow: 0 8px 24px rgba(139, 92, 246, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
         }
 
         .register-button:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 
-            0 12px 32px rgba(139, 92, 246, 0.45),
-            0 0 0 1px rgba(255, 255, 255, 0.15) inset;
-        }
-
-        .register-button:active:not(:disabled) {
-          transform: translateY(0);
+          box-shadow: 0 12px 32px rgba(139, 92, 246, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
         }
 
         .register-button:disabled {
-          opacity: 0.7;
+          opacity: 0.6;
           cursor: not-allowed;
+          transform: none;
         }
 
-        .register-button::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-          transition: left 0.5s ease;
-        }
-
-        .register-button:hover::before {
-          left: 100%;
-        }
-
-        .button-text {
-          position: relative;
-          z-index: 1;
-        }
-
-        .button-icon {
-          position: relative;
-          z-index: 1;
-          transition: transform 0.3s ease;
-        }
-
-        .register-button:hover .button-icon {
-          transform: translateX(4px) rotate(-15deg);
+        .register-button.loading .button-text,
+        .register-button.loading .button-icon {
+          opacity: 0;
         }
 
         .button-spinner {
@@ -606,11 +620,6 @@ export const RegisterPage: React.FC = () => {
           border-top-color: white;
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
-        }
-
-        .register-button.loading .button-text,
-        .register-button.loading .button-icon {
-          opacity: 0;
         }
 
         @keyframes spin {
@@ -635,35 +644,14 @@ export const RegisterPage: React.FC = () => {
         .link-highlight {
           color: #8b5cf6;
           font-weight: 600;
-          transition: all 0.2s ease;
         }
 
-        .register-link:hover .link-highlight {
-          text-decoration: underline;
-          text-underline-offset: 3px;
-        }
-
-        /* Responsive adjustments */
         @media (max-width: 520px) {
           .register-page-wrapper {
             padding: 1rem;
           }
-
           .register-card-content {
             padding: 1.5rem;
-          }
-
-          .register-title {
-            font-size: 1.375rem;
-          }
-
-          .register-icon-wrapper {
-            width: 56px;
-            height: 56px;
-          }
-
-          .register-icon {
-            font-size: 1.5rem;
           }
         }
       `}</style>

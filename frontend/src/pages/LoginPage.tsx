@@ -63,30 +63,11 @@ export const LoginPage: React.FC = () => {
     setShinePos({ x: 50, y: 50 });
   };
 
-  // Check if running in Tempo canvas (for UI testing only)
-  const isTempoEnvironment = window.location.hostname.includes('tempo.build') || 
-                              window.location.hostname.includes('canvases.tempo');
-
+  // SECURITY FIX: Removed tempo backdoor - all logins go through real authentication
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    
-    // Demo login for Tempo canvas UI testing only
-    if (isTempoEnvironment && username === 'tempo' && password === 'tempo') {
-      // Create a mock JWT token for demo purposes (UI testing only)
-      const mockPayload = {
-        sub: 'demo-user',
-        role: 'STUDENT',
-        tenant: tenantId,
-        exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour expiry
-      };
-      const mockToken = `eyJhbGciOiJIUzI1NiJ9.${btoa(JSON.stringify(mockPayload))}.demo-signature`;
-      login(mockToken, tenantId);
-      navigate('/dashboard', { replace: true });
-      setLoading(false);
-      return;
-    }
     
     try {
       const res = await api.post('/auth/login', { username, password, tenantId });
@@ -94,7 +75,14 @@ export const LoginPage: React.FC = () => {
       login(token, tenantId);
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message ?? 'Login failed');
+      // Provide helpful error messages
+      if (err.response?.status === 401) {
+        setError('Invalid username or password. Please try again.');
+      } else if (err.response?.status === 404) {
+        setError('User not found. Please check your username and faculty.');
+      } else {
+        setError(err.response?.data?.message ?? 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -204,7 +192,7 @@ export const LoginPage: React.FC = () => {
             <div className="form-field">
               <label className="form-label">
                 <span className="label-icon">🏛️</span>
-                Tenant / Faculty
+                Faculty / Department
               </label>
               <input
                 className="form-input login-input"
@@ -244,7 +232,7 @@ export const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Login page styles */}
+      {/* Login page styles - same as before */}
       <style>{`
         .login-page-wrapper {
           position: relative;
@@ -566,7 +554,6 @@ export const LoginPage: React.FC = () => {
           text-underline-offset: 3px;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 480px) {
           .login-page-wrapper {
             padding: 1rem;
