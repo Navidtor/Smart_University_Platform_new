@@ -205,6 +205,22 @@ export const ExamsPage: React.FC = () => {
     }
   };
 
+  /**
+   * FIX #3: Close/End exam - stops accepting submissions
+   * Only teachers/admins can close their own exams
+   */
+  const handleEndExam = async (examId: string) => {
+    setStatus(null);
+    try {
+      await api.post(`/exam/exams/${examId}/close`);
+      showToast('Exam closed! No more submissions accepted.', 'success');
+      const listRes = await api.get<ExamSummary[]>('/exam/exams');
+      setExams(listRes.data);
+    } catch (err: any) {
+      setStatus(err.response?.data?.message ?? 'Failed to close exam');
+    }
+  };
+
   const handleLoadExam = async (examId: string) => {
     setStatus(null);
     setLoadingExamDetail(true);
@@ -243,7 +259,8 @@ export const ExamsPage: React.FC = () => {
     setTimeRemaining(null);
   };
 
-  const availableExams = exams.filter(e => e.state === 'IN_PROGRESS');
+  // Students see exams that are LIVE (backend) or IN_PROGRESS (legacy naming)
+  const availableExams = exams.filter(e => e.state === 'IN_PROGRESS' || e.state === 'LIVE');
 
   return (
     <div className="exams-page">
@@ -276,8 +293,13 @@ export const ExamsPage: React.FC = () => {
                         <span className="exam-id">ID: {exam.id.slice(0, 8)}...</span>
                       </div>
                       <span className={`exam-state ${exam.state.toLowerCase().replace('_', '-')}`}>{exam.state}</span>
-                      {exam.state === 'DRAFT' && (
+                      {/* FIX #3: Show Start button for DRAFT and SCHEDULED exams */}
+                      {(exam.state === 'DRAFT' || exam.state === 'SCHEDULED') && (
                         <button className="btn-primary btn-sm" onClick={() => handleStartExam(exam.id)}>Start</button>
+                      )}
+                      {/* FIX #3: Show Close button for LIVE/IN_PROGRESS exams */}
+                      {(exam.state === 'LIVE' || exam.state === 'IN_PROGRESS') && (
+                        <button className="btn-danger btn-sm" onClick={() => handleEndExam(exam.id)}>Close</button>
                       )}
                     </div>
                   ))}
