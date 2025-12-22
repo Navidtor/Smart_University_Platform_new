@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -17,31 +18,29 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 
 /**
- * Client for communicating with the Payment Service.
+ * Simple HTTP client for interacting with the Payment service.
  * 
- * FIXES APPLIED:
+ * IMPROVEMENTS:
  * 1. Added RestTemplate timeout configuration (connect: 5s, read: 10s)
  * 2. Added @CircuitBreaker for fault tolerance
  * 3. Added @Retry for transient failures
- * 4. Proper null handling instead of Objects.requireNonNull throwing NPE
+ * 4. Better null handling
  */
 @Component
 public class PaymentClient {
 
     private final RestTemplate restTemplate;
-    private final String paymentServiceUrl;
+    private final String baseUrl;
 
     public PaymentClient(
             RestTemplateBuilder restTemplateBuilder,
-            @Value("${services.payment.url:http://localhost:8086}") String paymentServiceUrl) {
-        
+            @Value("${payment.service.base-url:http://localhost:8084}") String baseUrl) {
         // FIX: Configure timeouts to prevent hanging indefinitely
         this.restTemplate = restTemplateBuilder
                 .connectTimeout(Duration.ofSeconds(5))
                 .readTimeout(Duration.ofSeconds(10))
                 .build();
-        
-        this.paymentServiceUrl = paymentServiceUrl;
+        this.baseUrl = baseUrl;
     }
 
     @CircuitBreaker(name = "paymentService", fallbackMethod = "authorizeFallback")
@@ -49,22 +48,22 @@ public class PaymentClient {
     public PaymentResponse authorize(String tenantId, PaymentAuthorizationRequest request) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Tenant-Id", tenantId);
+        headers.add("X-Tenant-Id", tenantId);
 
         HttpEntity<PaymentAuthorizationRequest> entity = new HttpEntity<>(request, headers);
-
+        
         try {
-            ResponseEntity<PaymentResponse> response = restTemplate.postForEntity(
-                    paymentServiceUrl + "/payments/authorize",
+            ResponseEntity<PaymentResponse> response = restTemplate.exchange(
+                    baseUrl + "/payment/payments/authorize",
+                    HttpMethod.POST,
                     entity,
-                    PaymentResponse.class);
-
-            // FIX: Proper null check instead of Objects.requireNonNull
+                    PaymentResponse.class
+            );
+            
             PaymentResponse body = response.getBody();
             if (body == null) {
                 throw new PaymentServiceException("Payment service returned empty response");
             }
-            
             return body;
         } catch (RestClientException ex) {
             throw new PaymentServiceException("Failed to communicate with payment service: " + ex.getMessage(), ex);
@@ -72,35 +71,60 @@ public class PaymentClient {
     }
 
     @CircuitBreaker(name = "paymentService", fallbackMethod = "cancelFallback")
-    public void cancel(String tenantId, String orderId) {
+    public PaymentResponse cancel(String tenantId, String orderId) {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Tenant-Id", tenantId);
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        headers.add("X-Tenant-Id", tenantId);
 
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        
         try {
-            restTemplate.postForEntity(
-                    paymentServiceUrl + "/payments/cancel/" + orderId,
+            ResponseEntity<PaymentResponse> response = restTemplate.exchange(
+                    baseUrl + "/payment/payments/cancel/" + orderId,
+                    HttpMethod.POST,
                     entity,
-                    Void.class);
+                    PaymentResponse.class
+            );
+            
+            PaymentResponse body = response.getBody();
+            if (body == null) {
+                // Return a default response for cancel
+                PaymentResponse defaultResponse = new PaymentResponse();
+                defaultResponse.setStatus("CANCELED");
+                return defaultResponse;
+            }
+            return body;
         } catch (RestClientException ex) {
             System.err.println("Failed to cancel payment for order " + orderId + ": " + ex.getMessage());
+            PaymentResponse errorResponse = new PaymentResponse();
+            errorResponse.setStatus("ERROR");
+            errorResponse.setMessage("Failed to cancel: " + ex.getMessage());
+            return errorResponse;
         }
     }
 
     private PaymentResponse authorizeFallback(String tenantId, PaymentAuthorizationRequest request, Exception ex) {
-        System.err.println("Payment service unavailable: " + ex.getMessage());
+        System.err.println("Payment service unavailable (circuit breaker): " + ex.getMessage());
         PaymentResponse response = new PaymentResponse();
         response.setStatus("FAILED");
-        response.setMessage("Payment service temporarily unavailable");
+        response.setMessage("Payment service temporarily unavailable. Please try again later.");
         return response;
     }
 
-    private void cancelFallback(String tenantId, String orderId, Exception ex) {
-        System.err.println("Failed to cancel payment for order " + orderId + ": " + ex.getMessage());
+    private PaymentResponse cancelFallback(String tenantId, String orderId, Exception ex) {
+        System.err.println("Failed to cancel payment for order " + orderId + " (circuit breaker): " + ex.getMessage());
+        PaymentResponse response = new PaymentResponse();
+        response.setStatus("ERROR");
+        response.setMessage("Could not cancel payment");
+        return response;
     }
 
     public static class PaymentServiceException extends RuntimeException {
-        public PaymentServiceException(String message) { super(message); }
-        public PaymentServiceException(String message, Throwable cause) { super(message, cause); }
+        public PaymentServiceException(String message) {
+            super(message);
+        }
+
+        public PaymentServiceException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }
