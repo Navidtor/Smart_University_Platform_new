@@ -68,10 +68,24 @@ public class ExamService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * FIX #2: EXAM SECURITY - Students can only view questions when exam is LIVE.
+     * Teachers/Admins can view anytime (to create and review exams).
+     * This prevents students from seeing questions before the exam starts.
+     */
     @Transactional(readOnly = true)
-    public ExamDetailDto getExamDetail(UUID examId, String tenantId) {
+    public ExamDetailDto getExamDetail(UUID examId, UUID userId, String tenantId, String role) {
         Exam exam = examRepository.findByIdAndTenantId(examId, tenantId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exam not found"));
+
+        boolean isTeacherOrAdmin = "TEACHER".equals(role) || "ADMIN".equals(role);
+        
+        // Students can only see exam details when exam is LIVE
+        // Teachers/Admins can see anytime (to manage the exam)
+        if (!isTeacherOrAdmin && exam.getState() != ExamStateType.LIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Exam is not yet available. Please wait until the exam starts.");
+        }
 
         return toDetailDto(exam);
     }
@@ -138,6 +152,29 @@ public class ExamService {
             logger.warn("RabbitTemplate not available - skipping exam.started event for exam {}", saved.getId());
         }
 
+        return toDto(saved);
+    }
+
+    /**
+     * FIX #3: CLOSE EXAM - Transition exam from LIVE to CLOSED.
+     * Once closed, no more submissions are accepted.
+     * Only the exam creator (teacher/admin) can close the exam.
+     */
+    @Transactional
+    public ExamDto closeExam(UUID examId, UUID userId, String tenantId, String role) {
+        Exam exam = examRepository.findByIdAndTenantId(examId, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exam not found"));
+
+        boolean isTeacherOrAdmin = "TEACHER".equals(role) || "ADMIN".equals(role);
+        if (!isTeacherOrAdmin || !exam.getCreatorId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the exam creator may close the exam");
+        }
+
+        ExamState state = examStateFactory.getState(exam.getState());
+        state.close(exam);
+        Exam saved = examRepository.save(exam);
+
+        logger.info("Exam {} closed by user {}", examId, userId);
         return toDto(saved);
     }
 
