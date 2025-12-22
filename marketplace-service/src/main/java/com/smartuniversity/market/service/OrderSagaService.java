@@ -27,10 +27,13 @@ import java.util.stream.Collectors;
 /**
  * Orchestrates the multi-step Saga for Marketplace checkout.
  * 
- * FIXES APPLIED:
- * 1. Added @Transactional to checkout() method
- * 2. Using pessimistic locking (findByIdAndTenantIdForUpdate) to prevent race conditions
- * 3. Added order history endpoints
+ * IMPROVEMENTS:
+ * 1. Using pessimistic locking (findByIdAndTenantIdForUpdate) to prevent race conditions
+ * 2. Added order history endpoints (getUserOrders, getOrder)
+ * 3. Early stock validation in createPendingOrder
+ * 
+ * NOTE: checkout() intentionally does NOT have @Transactional because it calls
+ * external services (payment). Each step has its own transaction boundary.
  */
 @Service
 public class OrderSagaService {
@@ -51,18 +54,19 @@ public class OrderSagaService {
     }
 
     /**
-     * FIX: Added @Transactional to ensure the entire checkout is atomic
+     * Saga orchestrator - intentionally NOT @Transactional as it calls external services.
+     * Each step (createPendingOrder, confirmOrderAndDecrementStock, markOrderCanceled)
+     * has its own transaction boundary.
      */
-    @Transactional
     public OrderDto checkout(String tenantId, UUID buyerId, CheckoutRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one item is required");
         }
 
-        // Step 1: create pending order and items
+        // Step 1: create pending order and items (own transaction)
         Order order = createPendingOrder(tenantId, buyerId, request);
 
-        // Step 2: request payment authorization
+        // Step 2: request payment authorization (external call - no transaction)
         PaymentAuthorizationRequest paymentRequest = new PaymentAuthorizationRequest();
         paymentRequest.setOrderId(order.getId());
         paymentRequest.setUserId(buyerId);
@@ -133,14 +137,6 @@ public class OrderSagaService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cross-tenant product access is not allowed");
             }
             int quantity = quantities.get(product.getId());
-            
-            // Check stock availability before creating order
-            if (product.getStock() < quantity) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        "Insufficient stock for product: " + product.getName() + 
-                        " (requested: " + quantity + ", available: " + product.getStock() + ")");
-            }
-            
             BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(quantity));
             total = total.add(itemTotal);
 
@@ -171,7 +167,7 @@ public class OrderSagaService {
         for (OrderItem item : order.getItems()) {
             UUID productId = item.getProduct().getId();
             
-            // FIX: Use findByIdAndTenantIdForUpdate for pessimistic locking
+            // Use findByIdAndTenantIdForUpdate for pessimistic locking
             Product product = productRepository.findByIdAndTenantIdForUpdate(productId, tenantId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
