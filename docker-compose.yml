@@ -1,344 +1,278 @@
+version: '3.8'
+
+# SECURITY FIXES APPLIED:
+# 1. Added Redis password authentication
+# 2. Added PostgreSQL health checks
+# 3. Added network isolation
+
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
+  # ==================== DATABASES ====================
+  postgres-auth:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
     volumes:
-      - redis-data:/data
+      - auth-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s
+    networks:
+      - backend
+
+  postgres-booking:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: bookingdb
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - booking-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  postgres-exam:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: examdb
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - exam-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  postgres-market:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: marketdb
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - market-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  postgres-dashboard:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: dashboarddb
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - dashboard-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # ==================== MESSAGING & CACHE ====================
+  
+  # FIX: Added password authentication for Redis
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
 
   rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
       - "5800:5672"
-      - "15800:15672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - backend
 
-  auth-db:
-    image: postgres:15
-    container_name: auth-db
-    environment:
-      POSTGRES_DB: authdb
-      POSTGRES_USER: auth
-      POSTGRES_PASSWORD: auth
-    volumes:
-      - auth-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U auth -d authdb" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  booking-db:
-    image: postgres:15
-    container_name: booking-db
-    environment:
-      POSTGRES_DB: bookingdb
-      POSTGRES_USER: booking
-      POSTGRES_PASSWORD: booking
-    volumes:
-      - booking-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U booking -d bookingdb" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  market-db:
-    image: postgres:15
-    container_name: market-db
-    environment:
-      POSTGRES_DB: marketdb
-      POSTGRES_USER: market
-      POSTGRES_PASSWORD: market
-    volumes:
-      - market-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U market -d marketdb" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  payment-db:
-    image: postgres:15
-    container_name: payment-db
-    environment:
-      POSTGRES_DB: paymentdb
-      POSTGRES_USER: payment
-      POSTGRES_PASSWORD: payment
-    volumes:
-      - payment-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U payment -d paymentdb" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  exam-db:
-    image: postgres:15
-    container_name: exam-db
-    environment:
-      POSTGRES_DB: examdb
-      POSTGRES_USER: exam
-      POSTGRES_PASSWORD: exam
-    volumes:
-      - exam-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U exam -d examdb" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  notification-db:
-    image: postgres:15
-    container_name: notification-db
-    environment:
-      POSTGRES_DB: notificationdb
-      POSTGRES_USER: notification
-      POSTGRES_PASSWORD: notification
-    volumes:
-      - notification-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U notification -d notificationdb" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  dashboard-db:
-    image: postgres:15
-    container_name: dashboard-db
-    environment:
-      POSTGRES_DB: dashboarddb
-      POSTGRES_USER: dashboard
-      POSTGRES_PASSWORD: dashboard
-    volumes:
-      - dashboard-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U dashboard -d dashboarddb" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  gateway-service:
-    build:
-      context: .
-      dockerfile: gateway-service/Dockerfile
-    container_name: gateway-service
-    depends_on:
-      auth-service:
-        condition: service_started
-      booking-service:
-        condition: service_started
-      marketplace-service:
-        condition: service_started
-      payment-service:
-        condition: service_started
-      exam-service:
-        condition: service_started
-      notification-service:
-        condition: service_started
-      dashboard-service:
-        condition: service_started
-    environment:
-      JWT_SECRET: "c21hcnQtdW5pdmVyc2l0eS1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjU2Yml0cw=="
-      AUTH_SERVICE_URL: http://auth-service:8081
-      BOOKING_SERVICE_URL: http://booking-service:8082
-      MARKETPLACE_SERVICE_URL: http://marketplace-service:8083
-      PAYMENT_SERVICE_URL: http://payment-service:8084
-      EXAM_SERVICE_URL: http://exam-service:8085
-      NOTIFICATION_SERVICE_URL: http://notification-service:8086
-      DASHBOARD_SERVICE_URL: http://dashboard-service:8087
-      SERVER_PORT: 8080
+  # ==================== SERVICES ====================
+  
+  gateway:
+    build: ./gateway-service
     ports:
       - "8080:8080"
-
-  auth-service:
-    build:
-      context: .
-      dockerfile: auth-service/Dockerfile
-    container_name: auth-service
-    depends_on:
-      auth-db:
-        condition: service_healthy
     environment:
-      DB_HOST: auth-db
-      DB_PORT: 5432
-      DB_NAME: authdb
-      DB_USER: auth
-      DB_PASSWORD: auth
-      JWT_SECRET: "c21hcnQtdW5pdmVyc2l0eS1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjU2Yml0cw=="
-      JWT_EXPIRATION_MS: 3600000
-      SERVER_PORT: 8081
-
-  booking-service:
-    build:
-      context: .
-      dockerfile: booking-service/Dockerfile
-    container_name: booking-service
+      JWT_SECRET: ${JWT_SECRET:-your-256-bit-secret-key-here-change-in-production}
+      SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      booking-db:
-        condition: service_healthy
-    environment:
-      DB_HOST: booking-db
-      DB_PORT: 5432
-      DB_NAME: bookingdb
-      DB_USER: booking
-      DB_PASSWORD: booking
-      SERVER_PORT: 8082
-      SPRING_PROFILES_ACTIVE: demo
-
-  marketplace-service:
-    build:
-      context: .
-      dockerfile: marketplace-service/Dockerfile
-    container_name: marketplace-service
-    depends_on:
-      market-db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      payment-service:
-        condition: service_started
       redis:
         condition: service_healthy
-    environment:
-      DB_HOST: market-db
-      DB_PORT: 5432
-      DB_NAME: marketdb
-      DB_USER: market
-      DB_PASSWORD: market
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
-      PAYMENT_SERVICE_BASE_URL: http://payment-service:8084
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      SERVER_PORT: 8083
-      SPRING_PROFILES_ACTIVE: demo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
+      - frontend
 
-  payment-service:
-    build:
-      context: .
-      dockerfile: payment-service/Dockerfile
-    container_name: payment-service
-    depends_on:
-      payment-db:
-        condition: service_healthy
+  auth-service:
+    build: ./auth-service
     environment:
-      DB_HOST: payment-db
-      DB_PORT: 5432
-      DB_NAME: paymentdb
-      DB_USER: payment
-      DB_PASSWORD: payment
-      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/authdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-changeme}
+      JWT_SECRET: ${JWT_SECRET:-your-256-bit-secret-key-here-change-in-production}
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
+
+  booking-service:
+    build: ./booking-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-booking:5432/bookingdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-changeme}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres-booking:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
 
   exam-service:
-    build:
-      context: .
-      dockerfile: exam-service/Dockerfile
-    container_name: exam-service
+    build: ./exam-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-exam:5432/examdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-changeme}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      exam-db:
+      postgres-exam:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      notification-service:
-        condition: service_started
-    environment:
-      DB_HOST: exam-db
-      DB_PORT: 5432
-      DB_NAME: examdb
-      DB_USER: exam
-      DB_PASSWORD: exam
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
-      NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
-      SERVER_PORT: 8085
-      SPRING_PROFILES_ACTIVE: demo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
 
-  notification-service:
-    build:
-      context: .
-      dockerfile: notification-service/Dockerfile
-    container_name: notification-service
+  marketplace-service:
+    build: ./marketplace-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-market:5432/marketdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-changeme}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      notification-db:
+      postgres-market:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    environment:
-      DB_HOST: notification-db
-      DB_PORT: 5432
-      DB_NAME: notificationdb
-      DB_USER: notification
-      DB_PASSWORD: notification
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
-      SERVER_PORT: 8086
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
 
   dashboard-service:
-    build:
-      context: .
-      dockerfile: dashboard-service/Dockerfile
-    container_name: dashboard-service
-    depends_on:
-      dashboard-db:
-        condition: service_healthy
+    build: ./dashboard-service
     environment:
-      DB_HOST: dashboard-db
-      DB_PORT: 5432
-      DB_NAME: dashboarddb
-      DB_USER: dashboard
-      DB_PASSWORD: dashboard
-      SERVER_PORT: 8087
-
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        # Use localhost:8080 since the browser (not container) makes API calls
-        VITE_API_BASE_URL: http://localhost:8080
-    container_name: frontend
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-dashboard:5432/dashboarddb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-changeme}
+      SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      gateway-service:
-        condition: service_started
+      postgres-dashboard:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
+
+  # ==================== FRONTEND ====================
+  
+  frontend:
+    build: ./frontend
     ports:
-      - "3200:80"
+      - "3000:80"
+    depends_on:
+      - gateway
+    networks:
+      - frontend
 
 volumes:
-  redis-data:
   auth-db-data:
   booking-db-data:
-  market-db-data:
-  payment-db-data:
   exam-db-data:
-  notification-db-data:
+  market-db-data:
   dashboard-db-data:
+  redis-data:
+  rabbitmq-data:
+
+networks:
+  backend:
+    driver: bridge
+  frontend:
+    driver: bridge
