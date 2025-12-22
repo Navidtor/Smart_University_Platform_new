@@ -30,7 +30,9 @@ import java.util.stream.Collectors;
  * IMPROVEMENTS:
  * 1. Using pessimistic locking (findByIdAndTenantIdForUpdate) to prevent race conditions
  * 2. Added order history endpoints (getUserOrders, getOrder)
- * 3. Early stock validation in createPendingOrder
+ * 3. toDto now includes createdAt
+ * 4. FIX: EARLY STOCK VALIDATION - Stock is now validated BEFORE payment authorization
+ *    to prevent authorizing payments for out-of-stock items
  * 
  * NOTE: checkout() intentionally does NOT have @Transactional because it calls
  * external services (payment). Each step has its own transaction boundary.
@@ -125,6 +127,20 @@ public class OrderSagaService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more products not found");
         }
 
+        // FIX #1: EARLY STOCK VALIDATION - Check stock BEFORE payment authorization
+        // This prevents authorizing payment for out-of-stock items
+        for (Product product : products) {
+            if (!tenantId.equals(product.getTenantId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cross-tenant product access is not allowed");
+            }
+            int requestedQuantity = quantities.get(product.getId());
+            if (product.getStock() < requestedQuantity) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Insufficient stock for product: " + product.getName() + 
+                        " (available: " + product.getStock() + ", requested: " + requestedQuantity + ")");
+            }
+        }
+
         BigDecimal total = BigDecimal.ZERO;
         Order order = new Order();
         order.setTenantId(tenantId);
@@ -133,9 +149,7 @@ public class OrderSagaService {
 
         List<OrderItem> items = new ArrayList<>();
         for (Product product : products) {
-            if (!tenantId.equals(product.getTenantId())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cross-tenant product access is not allowed");
-            }
+            // Tenant validation already done above in stock check loop
             int quantity = quantities.get(product.getId());
             BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(quantity));
             total = total.add(itemTotal);
@@ -193,7 +207,7 @@ public class OrderSagaService {
     }
 
     /**
-     * NEW: Get user's order history
+     * Get user's order history
      */
     @Transactional(readOnly = true)
     public List<OrderDto> getUserOrders(String tenantId, UUID buyerId) {
@@ -204,7 +218,7 @@ public class OrderSagaService {
     }
 
     /**
-     * NEW: Get a specific order
+     * Get a specific order
      */
     @Transactional(readOnly = true)
     public OrderDto getOrder(String tenantId, UUID orderId, UUID buyerId) {
@@ -219,6 +233,9 @@ public class OrderSagaService {
         return toDto(order);
     }
 
+    /**
+     * FIX #3: Updated to include createdAt in the DTO
+     */
     public OrderDto toDto(Order order) {
         List<OrderItemDto> itemDtos = order.getItems().stream()
                 .map(i -> new OrderItemDto(
@@ -228,6 +245,13 @@ public class OrderSagaService {
                         i.getPrice()))
                 .collect(Collectors.toList());
 
-        return new OrderDto(order.getId(), order.getTotalAmount(), order.getStatus(), itemDtos);
+        // FIX #3: Now passing createdAt to constructor
+        return new OrderDto(
+                order.getId(), 
+                order.getTotalAmount(), 
+                order.getStatus(), 
+                itemDtos,
+                order.getCreatedAt()  // FIX #3: Added createdAt
+        );
     }
 }

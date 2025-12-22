@@ -20,6 +20,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Service for booking operations.
+ * 
+ * FIXES APPLIED:
+ * - Duration validation (min 30 min, max 24 hours)
+ * - Future-only validation
+ * - Cancel reservation functionality
+ * - FIX #8: toReservationDto now includes resourceName
+ */
 @Service
 public class BookingService {
 
@@ -63,12 +72,12 @@ public class BookingService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start and end times are required");
         }
 
-        // FIX: Validate end time is after start time
+        // Validate end time is after start time
         if (!request.getEndTime().isAfter(request.getStartTime())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End time must be after start time");
         }
 
-        // FIX: Validate duration constraints
+        // Validate duration constraints
         Duration duration = Duration.between(request.getStartTime(), request.getEndTime());
         if (duration.compareTo(MIN_DURATION) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
@@ -89,7 +98,7 @@ public class BookingService {
         Resource resource = resourceRepository.findByIdAndTenantId(request.getResourceId(), tenantId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found"));
 
-        // FIX: Check for overlapping reservations with pessimistic locking
+        // Check for overlapping reservations with pessimistic locking
         List<Reservation> overlapping = reservationRepository.findOverlappingReservationsForUpdate(
                 request.getResourceId(),
                 tenantId,
@@ -143,10 +152,14 @@ public class BookingService {
         );
     }
 
+    /**
+     * FIX #8: Updated to include resourceName
+     */
     private ReservationDto toReservationDto(Reservation reservation) {
         return new ReservationDto(
                 reservation.getId(),
                 reservation.getResource().getId(),
+                reservation.getResource().getName(),  // FIX #8: Added resourceName
                 reservation.getUserId(),
                 reservation.getStartTime(),
                 reservation.getEndTime(),

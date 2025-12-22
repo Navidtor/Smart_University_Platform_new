@@ -393,7 +393,17 @@ export const MarketplacePage: React.FC = () => {
               {orders.map(order => (
                 <div key={order.id} className="order-card">
                   <div className="order-header">
-                    <span className="order-id">Order #{order.id.slice(0, 8)}</span>
+                    <div className="order-header-left">
+                      <span className="order-id">Order #{order.id.slice(0, 8)}</span>
+                      {/* FIX #3: Display order date */}
+                      {order.createdAt && (
+                        <span className="order-date">
+                          {new Date(order.createdAt).toLocaleDateString('en-US', {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                          })}
+                        </span>
+                      )}
+                    </div>
                     <span className={`order-status ${order.status.toLowerCase()}`}>
                       {order.status}
                     </span>
@@ -820,6 +830,18 @@ export const MarketplacePage: React.FC = () => {
           font-weight: 600;
           color: var(--text);
           font-family: monospace;
+        }
+
+        /* FIX #3: Order date styles */
+        .order-header-left {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .order-date {
+          font-size: 0.75rem;
+          color: var(--muted);
         }
 
         .order-status {

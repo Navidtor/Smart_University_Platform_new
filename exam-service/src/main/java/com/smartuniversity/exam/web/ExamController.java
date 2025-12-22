@@ -49,17 +49,25 @@ public class ExamController {
         return ResponseEntity.ok(exams);
     }
 
+    /**
+     * FIX #2: EXAM SECURITY - Now requires role to validate that students
+     * can only view exam details when the exam is LIVE.
+     * Teachers/Admins can view anytime.
+     */
     @GetMapping("/exams/{id}")
     @Operation(
             summary = "Get exam details",
-            description = "Returns exam metadata and questions for the current tenant."
+            description = "Returns exam metadata and questions. Students can only view when exam is LIVE. Teachers/Admins can view anytime."
     )
     public ResponseEntity<ExamDetailDto> getExam(@PathVariable("id") UUID examId,
+                                                 @RequestHeader("X-User-Id") String userIdHeader,
+                                                 @RequestHeader("X-User-Role") String role,
                                                  @RequestHeader("X-Tenant-Id") String tenantId) {
-        if (!StringUtils.hasText(tenantId)) {
+        if (!StringUtils.hasText(tenantId) || !StringUtils.hasText(userIdHeader) || !StringUtils.hasText(role)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        ExamDetailDto exam = examService.getExamDetail(examId, tenantId);
+        UUID userId = UUID.fromString(userIdHeader);
+        ExamDetailDto exam = examService.getExamDetail(examId, userId, tenantId, role);
         return ResponseEntity.ok(exam);
     }
 
@@ -99,6 +107,30 @@ public class ExamController {
 
         UUID userId = UUID.fromString(userIdHeader);
         ExamDto exam = examService.startExam(examId, userId, tenantId, role);
+        return ResponseEntity.ok(exam);
+    }
+
+    /**
+     * FIX #3: CLOSE EXAM ENDPOINT - Allows teachers/admins to close an exam.
+     * Once closed, no more submissions are accepted.
+     */
+    @PostMapping("/exams/{id}/close")
+    @Operation(
+            summary = "Close exam",
+            description = "Closes an exam by moving it to CLOSED state. No more submissions will be accepted. "
+                    + "Only the exam creator with TEACHER/ADMIN role may close the exam."
+    )
+    public ResponseEntity<ExamDto> closeExam(@PathVariable("id") UUID examId,
+                                             @RequestHeader("X-User-Id") String userIdHeader,
+                                             @RequestHeader("X-User-Role") String role,
+                                             @RequestHeader("X-Tenant-Id") String tenantId) {
+
+        if (!StringUtils.hasText(userIdHeader) || !StringUtils.hasText(role)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        UUID userId = UUID.fromString(userIdHeader);
+        ExamDto exam = examService.closeExam(examId, userId, tenantId, role);
         return ResponseEntity.ok(exam);
     }
 

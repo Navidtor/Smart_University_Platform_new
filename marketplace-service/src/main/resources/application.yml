@@ -20,6 +20,8 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      # FIX #2: Added Redis password support
+      password: ${REDIS_PASSWORD:}
   cache:
     type: redis
     redis:
@@ -34,7 +36,44 @@ management:
     web:
       exposure:
         include: health,info
+  health:
+    circuitbreakers:
+      enabled: true
 
 payment:
   service:
     base-url: ${PAYMENT_SERVICE_BASE_URL:http://localhost:8084}
+
+# FIX #1: Resilience4j Configuration for PaymentClient
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 2s
+  retry:
+    instances:
+      paymentService:
+        maxAttempts: 3
+        waitDuration: 1s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - org.springframework.web.client.ResourceAccessException
+        ignoreExceptions:
+          - org.springframework.web.server.ResponseStatusException
+  timelimiter:
+    instances:
+      paymentService:
+        timeoutDuration: 15s
+        cancelRunningFuture: true
