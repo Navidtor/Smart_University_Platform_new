@@ -1,100 +1,71 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { setAuthContext } from '../api/client';
 
-interface User {
-  userId: string;
-  username: string;
-  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
-  tenantId: string;
-}
-
-interface AuthContextType {
+type AuthContextValue = {
   token: string | null;
+  role: string | null;
   tenantId: string | null;
   userId: string | null;
   username: string | null;
-  role: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, tenantId: string) => void;
+  login: (token: string, tenantId: string | null) => void;
   logout: () => void;
-}
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// FIX: Decode JWT and check expiration
-const decodeJwt = (token: string): { payload: any; isValid: boolean } => {
+// FIX: Improved JWT decoder with expiration check
+function decodeJwt(token: string): { payload: any; isValid: boolean } {
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return { payload: null, isValid: false };
-    }
-
-    const payload = JSON.parse(atob(parts[1]));
+    const [, payloadB64] = token.split('.');
+    const json = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+    const payload = JSON.parse(json);
     
-    // FIX: Check token expiration
+    // Check token expiration
     if (payload.exp) {
       const expirationTime = payload.exp * 1000; // Convert to milliseconds
-      const now = Date.now();
-      
-      if (now >= expirationTime) {
+      if (Date.now() >= expirationTime) {
         console.warn('Token has expired');
         return { payload, isValid: false };
       }
     }
     
     return { payload, isValid: true };
-  } catch (error) {
-    console.error('Failed to decode JWT:', error);
+  } catch {
     return { payload: null, isValid: false };
   }
-};
+}
 
-// Check if token will expire soon (within 5 minutes)
-const isTokenExpiringSoon = (token: string): boolean => {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return true;
-    
-    const payload = JSON.parse(atob(parts[1]));
-    if (!payload.exp) return false;
-    
-    const expirationTime = payload.exp * 1000;
-    const fiveMinutes = 5 * 60 * 1000;
-    
-    return Date.now() >= expirationTime - fiveMinutes;
-  } catch {
-    return true;
-  }
-};
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize auth state from localStorage
+  // Initialize from localStorage
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedTenantId = localStorage.getItem('tenantId');
-
-    if (storedToken && storedTenantId) {
-      const { payload, isValid } = decodeJwt(storedToken);
+    const stored = localStorage.getItem('sup_token');
+    const storedTenant = localStorage.getItem('sup_tenant');
+    
+    if (stored) {
+      const { payload, isValid } = decodeJwt(stored);
       
       if (isValid && payload) {
-        setToken(storedToken);
-        setTenantId(storedTenantId);
-        setUser({
-          userId: payload.sub || payload.userId,
-          username: payload.username || 'Unknown',
-          role: payload.role || 'STUDENT',
-          tenantId: storedTenantId,
-        });
+        setToken(stored);
+        const resolvedTenant = storedTenant ?? payload?.tenant ?? null;
+        setRole(payload?.role ?? null);
+        setUserId(payload?.sub ?? null);
+        setUsername(payload?.username ?? null);
+        setTenantId(resolvedTenant);
+        setAuthContext(stored, resolvedTenant);
       } else {
-        // Token is invalid or expired - clear it
+        // Token invalid or expired - clear it
         console.log('Clearing expired/invalid token');
-        localStorage.removeItem('token');
-        localStorage.removeItem('tenantId');
+        localStorage.removeItem('sup_token');
+        localStorage.removeItem('sup_tenant');
       }
     }
     
@@ -115,11 +86,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Check every minute
     const interval = setInterval(checkExpiration, 60 * 1000);
-    
     return () => clearInterval(interval);
   }, [token]);
 
-  const login = useCallback((newToken: string, newTenantId: string) => {
+  const login = useCallback((newToken: string, explicitTenant: string | null) => {
     const { payload, isValid } = decodeJwt(newToken);
     
     if (!isValid) {
@@ -127,53 +97,51 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('tenantId', newTenantId);
-    
     setToken(newToken);
-    setTenantId(newTenantId);
-    setUser({
-      userId: payload.sub || payload.userId,
-      username: payload.username || 'Unknown',
-      role: payload.role || 'STUDENT',
-      tenantId: newTenantId,
-    });
+    localStorage.setItem('sup_token', newToken);
+    
+    const resolvedTenant = explicitTenant ?? payload?.tenant ?? null;
+    if (resolvedTenant) {
+      localStorage.setItem('sup_tenant', resolvedTenant);
+    }
+    
+    setTenantId(resolvedTenant);
+    setRole(payload?.role ?? null);
+    setUserId(payload?.sub ?? null);
+    setUsername(payload?.username ?? null);
+    setAuthContext(newToken, resolvedTenant);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('tenantId');
     setToken(null);
+    setRole(null);
     setTenantId(null);
-    setUser(null);
+    setUserId(null);
+    setUsername(null);
+    localStorage.removeItem('sup_token');
+    localStorage.removeItem('sup_tenant');
+    setAuthContext(null, null);
   }, []);
 
-  const value: AuthContextType = {
+  const value: AuthContextValue = {
     token,
+    role,
     tenantId,
-    userId: user?.userId || null,
-    username: user?.username || null,
-    role: user?.role || null,
-    isAuthenticated: !!token && !!user,
+    userId,
+    username,
+    isAuthenticated: !!token,
     isLoading,
     login,
-    logout,
+    logout
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error('useAuth must be used within AuthProvider');
   }
-  return context;
-};
-
-// FIX: Export helper to check if token is valid
-export const isTokenValid = (token: string | null): boolean => {
-  if (!token) return false;
-  const { isValid } = decodeJwt(token);
-  return isValid;
-};
+  return ctx;
+}
