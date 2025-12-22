@@ -6,7 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * LIVE exam is already running; cannot be started again but accepts submissions.
+ * LIVE exam is running; cannot be started again but accepts submissions.
+ * Can be closed to stop accepting submissions.
  */
 public class LiveExamState implements ExamState {
 
@@ -18,6 +19,15 @@ public class LiveExamState implements ExamState {
     @Override
     public void start(Exam exam) {
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Exam is already live");
+    }
+
+    /**
+     * FIX #3: Close the exam - transition from LIVE to CLOSED.
+     * Only LIVE exams can be closed.
+     */
+    @Override
+    public void close(Exam exam) {
+        exam.setState(ExamStateType.CLOSED);
     }
 
     @Override
