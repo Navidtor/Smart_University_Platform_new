@@ -13,6 +13,7 @@ type Resource = {
 type Reservation = {
   id: string;
   resourceId: string;
+  resourceName?: string;  // FIX: Added for better UX
   userId: string;
   startTime: string;
   endTime: string;
@@ -71,6 +72,7 @@ export const BookingPage: React.FC = () => {
   const [duration, setDuration] = useState(1);
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
 
@@ -182,7 +184,31 @@ export const BookingPage: React.FC = () => {
     }
   };
 
-  // Navigate weeks
+  
+  // FIX #6: Cancel reservation functionality
+  const handleCancelReservation = async (reservationId: string) => {
+    if (cancelingId) return;
+    
+    setCancelingId(reservationId);
+    try {
+      await api.delete(`/booking/reservations/${reservationId}`);
+      showToast('Reservation cancelled successfully', 'success');
+      
+      // Refresh reservations
+      const res = await api.get<Reservation[]>('/booking/reservations');
+      setReservations(res.data);
+      if (userId) {
+        setMyReservations(res.data.filter(r => r.userId === userId && r.status === 'CREATED'));
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message ?? 'Failed to cancel reservation';
+      showToast(msg, 'error');
+    } finally {
+      setCancelingId(null);
+    }
+  };
+
+// Navigate weeks
   const goToPreviousWeek = () => {
     const newStart = new Date(weekStart);
     newStart.setDate(weekStart.getDate() - 7);
@@ -361,7 +387,7 @@ export const BookingPage: React.FC = () => {
                   <div key={res.id} className="reservation-card">
                     <span className="res-icon">{getResourceIcon(resource?.type)}</span>
                     <div className="res-details">
-                      <span className="res-name">{resource?.name || 'Unknown'}</span>
+                      <span className="res-name">{res.resourceName || resource?.name || 'Unknown'}</span>
                       <span className="res-time">
                         {start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                         {' • '}
@@ -373,6 +399,14 @@ export const BookingPage: React.FC = () => {
                     <span className={`res-status ${res.status.toLowerCase()}`}>
                       {res.status}
                     </span>
+                    {/* FIX #6: Cancel button */}
+                    <button
+                      className="btn-cancel"
+                      onClick={() => handleCancelReservation(res.id)}
+                      disabled={cancelingId === res.id}
+                    >
+                      {cancelingId === res.id ? '...' : '✕'}
+                    </button>
                   </div>
                 );
               })}
@@ -766,6 +800,28 @@ export const BookingPage: React.FC = () => {
         .res-status.created {
           background: var(--success-soft);
           color: var(--success);
+        }
+
+        /* FIX #6: Cancel button styles */
+        .btn-cancel {
+          padding: 0.375rem 0.625rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          background: transparent;
+          border: 1px solid var(--danger, #ef4444);
+          color: var(--danger, #ef4444);
+          border-radius: var(--radius);
+          cursor: pointer;
+          transition: all 0.15s ease;
+          min-width: 28px;
+        }
+        .btn-cancel:hover:not(:disabled) {
+          background: var(--danger, #ef4444);
+          color: white;
+        }
+        .btn-cancel:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         /* Modal */
