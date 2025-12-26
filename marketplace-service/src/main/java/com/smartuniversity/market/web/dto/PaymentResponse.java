@@ -14,6 +14,7 @@ public class PaymentResponse {
     private BigDecimal amount;
     private String status;
     private String provider;
+    private String message;
 
     public UUID getPaymentId() {
         return paymentId;
@@ -61,5 +62,13 @@ public class PaymentResponse {
 
     public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

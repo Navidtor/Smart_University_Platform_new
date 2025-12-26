@@ -83,8 +83,9 @@ catch {
 # Check Redis
 Write-Host -NoNewline "   Redis                     "
 try {
-    $redisPing = docker exec redis redis-cli ping 2>$null
-    if ($redisPing -eq "PONG") {
+    # Redis requires password authentication (default: changeme)
+    $redisPing = docker exec redis redis-cli -a changeme ping 2>$null
+    if ($redisPing -match "PONG") {
         Write-Host "✅ UP (PONG received)" -ForegroundColor Green
     }
     else {

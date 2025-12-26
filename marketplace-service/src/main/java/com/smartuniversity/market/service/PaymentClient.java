@@ -37,8 +37,8 @@ public class PaymentClient {
             @Value("${payment.service.base-url:http://localhost:8084}") String baseUrl) {
         // FIX: Configure timeouts to prevent hanging indefinitely
         this.restTemplate = restTemplateBuilder
-                .connectTimeout(Duration.ofSeconds(5))
-                .readTimeout(Duration.ofSeconds(10))
+                .setConnectTimeout(Duration.ofSeconds(5))
+                .setReadTimeout(Duration.ofSeconds(10))
                 .build();
         this.baseUrl = baseUrl;
     }
@@ -51,15 +51,14 @@ public class PaymentClient {
         headers.add("X-Tenant-Id", tenantId);
 
         HttpEntity<PaymentAuthorizationRequest> entity = new HttpEntity<>(request, headers);
-        
+
         try {
             ResponseEntity<PaymentResponse> response = restTemplate.exchange(
                     baseUrl + "/payment/payments/authorize",
                     HttpMethod.POST,
                     entity,
-                    PaymentResponse.class
-            );
-            
+                    PaymentResponse.class);
+
             PaymentResponse body = response.getBody();
             if (body == null) {
                 throw new PaymentServiceException("Payment service returned empty response");
@@ -76,15 +75,14 @@ public class PaymentClient {
         headers.add("X-Tenant-Id", tenantId);
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        
+
         try {
             ResponseEntity<PaymentResponse> response = restTemplate.exchange(
                     baseUrl + "/payment/payments/cancel/" + orderId,
                     HttpMethod.POST,
                     entity,
-                    PaymentResponse.class
-            );
-            
+                    PaymentResponse.class);
+
             PaymentResponse body = response.getBody();
             if (body == null) {
                 // Return a default response for cancel
