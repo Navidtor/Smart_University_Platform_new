@@ -1,7 +1,7 @@
 # Smart University Microservices Platform
 
 A production-style **Smart University Management Platform** built as a set of Spring Boot microservices with a React + TypeScript SPA frontend.  
-This project follows the specification of the _SAD-Project-V1(140401).pdf_ and implements:
+This project implements:
 
 - **Auth & User Service** – registration, login, JWT.
 - **Booking & Resource Service** – room/lab resources and reservations with **no overbooking**.
