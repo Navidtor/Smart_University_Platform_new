@@ -25,12 +25,11 @@ Registers a new user and returns a JWT.
   {
     "username": "alice",
     "password": "StrongPassword123",
-    "tenantId": "engineering",
-    "role": "STUDENT"
+    "tenantId": "engineering"
   }
   ```
 
-  - `role` is optional; defaults to `STUDENT` if omitted.
+  - Roles are assigned server-side. New users register without a role field and default to `STUDENT`; elevated roles must be granted by an administrator.
 
 - **Responses**:
   - `201 Created`:

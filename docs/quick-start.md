@@ -95,7 +95,7 @@ DETACH=1 ./scripts/start-platform.sh
 
 ## Demo Walkthrough
 
-### 1. Register a Teacher
+### 1. Register a User (Teacher Role Assigned Server-Side)
 
 1. Open http://localhost:3200
 2. Click "Register"
@@ -103,8 +103,8 @@ DETACH=1 ./scripts/start-platform.sh
    - Username: `teacher1`
    - Password: `password123`
    - Tenant/Faculty: `engineering`
-   - Role: `TEACHER`
 4. Click "Register"
+5. Have an administrator assign the `TEACHER` role to `teacher1` (roles are assigned server-side).
 
 ### 2. Create a Product (Marketplace)
 
@@ -123,7 +123,7 @@ DETACH=1 ./scripts/start-platform.sh
    - Username: `student1`
    - Password: `password123`
    - Tenant/Faculty: `engineering`
-   - Role: `STUDENT`
+3. The account defaults to `STUDENT` (roles are assigned server-side).
 
 ### 4. Buy a Product (Saga Flow)
 
@@ -261,7 +261,7 @@ docker compose build --no-cache
 # Register
 curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"username":"test","password":"test123","tenantId":"engineering","role":"STUDENT"}'
+  -d '{"username":"test","password":"test123","tenantId":"engineering"}'
 
 # Login
 curl -X POST http://localhost:8080/auth/login \

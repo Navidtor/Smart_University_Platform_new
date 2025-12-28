@@ -349,7 +349,7 @@ services:
 
 ## Live Demo Steps
 
-1. **Register** as TEACHER in `engineering` faculty
+1. **Register** a user in `engineering` faculty (roles are assigned server-side)
 2. **Login** and receive JWT
 3. **Create Resource** (Room 101)
 4. **Book Resource** - verify no overbooking
