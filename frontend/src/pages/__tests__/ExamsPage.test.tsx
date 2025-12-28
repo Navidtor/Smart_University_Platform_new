@@ -153,7 +153,8 @@ describe('ExamsPage', () => {
     );
     renderWithProviders();
 
-    fireEvent.click(screen.getByRole('button', { name: /Take Exam/i }));
+    const takeExamButton = await screen.findByRole('button', { name: /Take Exam/i });
+    fireEvent.click(takeExamButton);
 
     await waitFor(() => {
       expect(screen.getByText(/What is microservices\?/i)).toBeInTheDocument();
