@@ -7,17 +7,19 @@ import { AuthProvider } from '../../state/AuthContext';
 import { ToastProvider } from '../../components/Toast';
 import { ExamsPage } from '../ExamsPage';
 
+type Exam = {
+  id: string;
+  title: string;
+  description: string;
+  startTime: string;
+  state: string;
+};
+
+let exams: Exam[] = [];
+
 const server = setupServer(
   http.get('http://localhost:8080/exam/exams', () => {
-    return HttpResponse.json([
-      {
-        id: 'exam-list-1',
-        title: 'Seeded Exam',
-        description: 'Seed',
-        startTime: new Date().toISOString(),
-        state: 'SCHEDULED'
-      }
-    ]);
+    return HttpResponse.json(exams);
   }),
   http.get('http://localhost:8080/exam/exams/exam-2', () => {
     return HttpResponse.json({
@@ -32,16 +34,15 @@ const server = setupServer(
     });
   }),
   http.post('http://localhost:8080/exam/exams', () => {
-    return HttpResponse.json(
-      {
-        id: 'exam-1',
-        title: 'Midterm',
-        description: 'Demo',
-        startTime: new Date().toISOString(),
-        state: 'SCHEDULED'
-      },
-      { status: 201 }
-    );
+    const createdExam = {
+      id: 'exam-1',
+      title: 'Midterm',
+      description: 'Demo',
+      startTime: new Date().toISOString(),
+      state: 'SCHEDULED'
+    };
+    exams = [...exams, createdExam];
+    return HttpResponse.json(createdExam, { status: 201 });
   }),
   http.post('http://localhost:8080/exam/exams/exam-1/start', () => {
     return HttpResponse.json({
@@ -58,6 +59,17 @@ const server = setupServer(
 );
 
 beforeAll(() => server.listen());
+beforeEach(() => {
+  exams = [
+    {
+      id: 'exam-list-1',
+      title: 'Seeded Exam',
+      description: 'Seed',
+      startTime: new Date().toISOString(),
+      state: 'SCHEDULED'
+    }
+  ];
+});
 afterEach(() => {
   server.resetHandlers();
   localStorage.clear();
