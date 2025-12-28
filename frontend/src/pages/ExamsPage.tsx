@@ -224,19 +224,20 @@ export const ExamsPage: React.FC = () => {
   const handleLoadExam = async (examId: string) => {
     setStatus(null);
     setLoadingExamDetail(true);
-    setHasSubmitted(false);
-    // Clear existing timer state before loading new exam
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    setTimerActive(false);
-    setTimeRemaining(null);
+    const previousSelectedExamId = selectedExamId;
+    setSelectedExamId(examId);
     try {
       const res = await api.get<ExamDetail>(`/exam/exams/${examId}`);
+      // Clear existing timer state only once we are ready to swap exams
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setTimerActive(false);
+      setTimeRemaining(null);
       setLoadedExam(res.data);
-      setSelectedExamId(examId);
       setAnswersByQuestion({});
+      setHasSubmitted(false);
       
       // FIX #4: Properly initialize timer
       if (res.data.durationMinutes) {
@@ -244,7 +245,7 @@ export const ExamsPage: React.FC = () => {
         setTimerActive(true); // Start the timer
       }
     } catch (err: any) {
-      setLoadedExam(null);
+      setSelectedExamId(previousSelectedExamId);
       setStatus(err.response?.data?.message ?? 'Failed to load exam');
     } finally {
       setLoadingExamDetail(false);
@@ -389,12 +390,12 @@ export const ExamsPage: React.FC = () => {
                   <div key={q.id} className="answer-item">
                     <label className="q-label"><span className="q-num">Q{idx+1}</span> {q.text}</label>
                     <textarea className="form-input" rows={4} value={answersByQuestion[q.id] ?? ''} 
-                      onChange={e => setAnswersByQuestion(prev => ({...prev, [q.id]: e.target.value}))} placeholder="Your answer..." />
+                      onChange={e => setAnswersByQuestion(prev => ({...prev, [q.id]: e.target.value}))} placeholder="Your answer..." disabled={loadingExamDetail} />
                   </div>
                 ))}
               </div>
               <div className="submit-section">
-                <button type="submit" className="btn-primary btn-lg" disabled={isSubmitting}>
+                <button type="submit" className="btn-primary btn-lg" disabled={isSubmitting || loadingExamDetail}>
                   {isSubmitting ? 'Submitting...' : '📤 Submit Exam'}
                 </button>
               </div>
