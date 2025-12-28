@@ -14,7 +14,7 @@ graph TB
     end
 
     subgraph Frontend["📱 Frontend Layer"]
-        SPA["React SPA<br/>───────────<br/>Vite + TypeScript<br/>TailwindCSS<br/>───────────<br/>:5173"]
+        SPA["React SPA<br/>───────────<br/>Vite + TypeScript<br/>TailwindCSS<br/>───────────<br/>:5173 dev / :3200 docker"]
     end
 
     subgraph Gateway["🚪 API Gateway Layer"]
