@@ -225,6 +225,13 @@ export const ExamsPage: React.FC = () => {
     setStatus(null);
     setLoadingExamDetail(true);
     setHasSubmitted(false);
+    // Clear existing timer state before loading new exam
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setTimerActive(false);
+    setTimeRemaining(null);
     try {
       const res = await api.get<ExamDetail>(`/exam/exams/${examId}`);
       setLoadedExam(res.data);
