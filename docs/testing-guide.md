@@ -47,10 +47,9 @@ start http://localhost:3200
 | 1 | Click "Sign in" → "Register" link | Registration form displayed |
 | 2 | Enter username: `testuser1` | Input accepted |
 | 3 | Enter password: `Test123!` | Input accepted |
-| 4 | Select role: `TEACHER` | Dropdown selection |
-| 5 | Enter tenant: `engineering` | Input accepted |
-| 6 | Click "Register" | Success message, redirect to login |
-| 7 | Login with same credentials | Dashboard displayed, role shown in header |
+| 4 | Enter tenant: `engineering` | Input accepted |
+| 5 | Click "Register" | Success message, redirect to login |
+| 6 | Login with same credentials | Dashboard displayed, role shown in header |
 
 ### Scenario 2: Dashboard (IoT Simulation)
 
