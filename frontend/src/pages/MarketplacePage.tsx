@@ -144,8 +144,13 @@ export const MarketplacePage: React.FC = () => {
   const handleUpdateCartQuantity = (productId: string, delta: number) => {
     setCartItems(prev => prev.map(item => {
       if (item.productId !== productId) return item;
+      const product = products.find(p => p.id === productId);
       const newQty = item.quantity + delta;
       if (newQty <= 0) return item;
+      if (delta > 0 && product && newQty > product.stock) {
+        showToast(`Only ${product.stock} items in stock`, 'warning');
+        return item;
+      }
       return { ...item, quantity: newQty };
     }));
   };
@@ -444,27 +449,37 @@ export const MarketplacePage: React.FC = () => {
             ) : (
               <>
                 <div className="cart-items">
-                  {cartItems.map(item => (
-                    <div key={item.productId} className="cart-item">
-                      <span className="cart-item-icon">{getCategoryIcon(item.productName)}</span>
-                      <div className="cart-item-info">
-                        <span className="cart-item-name">{item.productName}</span>
-                        <span className="cart-item-price">€{item.price.toFixed(2)} each</span>
+                  {cartItems.map(item => {
+                    const stock = products.find(p => p.id === item.productId)?.stock;
+                    const isAtStockLimit = stock !== undefined && item.quantity >= stock;
+
+                    return (
+                      <div key={item.productId} className="cart-item">
+                        <span className="cart-item-icon">{getCategoryIcon(item.productName)}</span>
+                        <div className="cart-item-info">
+                          <span className="cart-item-name">{item.productName}</span>
+                          <span className="cart-item-price">€{item.price.toFixed(2)} each</span>
+                        </div>
+                        <div className="cart-item-qty">
+                          <button onClick={() => handleUpdateCartQuantity(item.productId, -1)}>−</button>
+                          <span>{item.quantity}</span>
+                          <button
+                            onClick={() => handleUpdateCartQuantity(item.productId, 1)}
+                            disabled={isAtStockLimit}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="cart-item-total">€{(item.price * item.quantity).toFixed(2)}</span>
+                        <button
+                          className="cart-item-remove"
+                          onClick={() => handleRemoveFromCart(item.productId)}
+                        >
+                          🗑️
+                        </button>
                       </div>
-                      <div className="cart-item-qty">
-                        <button onClick={() => handleUpdateCartQuantity(item.productId, -1)}>−</button>
-                        <span>{item.quantity}</span>
-                        <button onClick={() => handleUpdateCartQuantity(item.productId, 1)}>+</button>
-                      </div>
-                      <span className="cart-item-total">€{(item.price * item.quantity).toFixed(2)}</span>
-                      <button
-                        className="cart-item-remove"
-                        onClick={() => handleRemoveFromCart(item.productId)}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="cart-footer">
@@ -1011,6 +1026,11 @@ export const MarketplacePage: React.FC = () => {
           background: var(--bg-surface);
           color: var(--text);
           cursor: pointer;
+        }
+
+        .cart-item-qty button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .cart-item-total {
