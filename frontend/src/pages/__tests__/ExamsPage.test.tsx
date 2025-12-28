@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../../state/AuthContext';
+import { ToastProvider } from '../../components/Toast';
 import { ExamsPage } from '../ExamsPage';
 
 const server = setupServer(
@@ -85,7 +86,9 @@ function renderWithProviders() {
   return render(
     <MemoryRouter>
       <AuthProvider>
-        <ExamsPage />
+        <ToastProvider>
+          <ExamsPage />
+        </ToastProvider>
       </AuthProvider>
     </MemoryRouter>
   );
@@ -95,7 +98,7 @@ describe('ExamsPage', () => {
   it('renders exam orchestration header and exam list', async () => {
     seedTeacherToken();
     renderWithProviders();
-    expect(screen.getByText(/Exam orchestration/i)).toBeInTheDocument();
+    expect(screen.getByText(/Exam Center/i)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText(/Seeded Exam/i)).toBeInTheDocument();
@@ -104,45 +107,67 @@ describe('ExamsPage', () => {
 
   it('allows teacher to create and start an exam', async () => {
     seedTeacherToken();
-    renderWithProviders();
+    const { container } = renderWithProviders();
 
-    fireEvent.change(screen.getByLabelText(/Exam title/i), { target: { value: 'Midterm' } });
-    fireEvent.change(screen.getByLabelText(/Question/i), { target: { value: 'What is microservices?' } });
-
-    fireEvent.click(screen.getByRole('button', { name: /Create exam/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/Exam created. You can now start it./i)).toBeInTheDocument();
-      expect(screen.getByText(/Exam ID:/i)).toBeInTheDocument();
+    const titleField = screen.getByText('Title').closest('.form-field')?.querySelector('input');
+    if (!titleField) {
+      throw new Error('Expected title input to be present.');
+    }
+    fireEvent.change(titleField, { target: { value: 'Midterm' } });
+    fireEvent.change(screen.getByPlaceholderText(/Question text\.\.\./i), {
+      target: { value: 'What is microservices?' }
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Start exam/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Create Exam/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Exam started. State: LIVE/i)).toBeInTheDocument();
+      expect(screen.getByText(/Exam created! You can now start it\./i)).toBeInTheDocument();
+      expect(screen.getByText(/Exam created!/i)).toBeInTheDocument();
+    });
+
+    const startButton = container.querySelector('.exam-card .btn-primary');
+    if (!startButton) {
+      throw new Error('Expected start button to be present.');
+    }
+    fireEvent.click(startButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Exam is now live!/i)).toBeInTheDocument();
     });
   });
 
   it('allows student to load exam details and submit answers', async () => {
     seedStudentToken();
+    server.use(
+      http.get('http://localhost:8080/exam/exams', () => {
+        return HttpResponse.json([
+          {
+            id: 'exam-2',
+            title: 'Loaded Exam',
+            description: 'Demo',
+            startTime: new Date().toISOString(),
+            state: 'LIVE'
+          }
+        ]);
+      })
+    );
     renderWithProviders();
 
-    fireEvent.change(screen.getByLabelText(/Exam ID/i), { target: { value: 'exam-2' } });
-    fireEvent.click(screen.getByRole('button', { name: /Load exam/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Take Exam/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Questions for Loaded Exam/i)).toBeInTheDocument();
       expect(screen.getByText(/What is microservices\?/i)).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText(/Answer for What is microservices\?/i), {
+    fireEvent.change(screen.getByPlaceholderText(/Your answer\.\.\./i), {
       target: { value: '42' }
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Submit answers/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Submit Exam/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Submission sent successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/Submitted!/i)).toBeInTheDocument();
+      expect(screen.getByText(/Exam submitted!/i)).toBeInTheDocument();
     });
   });
 });
