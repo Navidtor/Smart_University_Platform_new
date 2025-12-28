@@ -153,7 +153,7 @@ export const ExamsPage: React.FC = () => {
   useEffect(() => {
     if (timeRemaining === 0 && loadedExam && !hasSubmitted && !isSubmitting) {
       handleStudentSubmit();
-      showToast('Time up! Exam auto-submitted.', 'warning');
+      showToast('Time\u2019s up! Exam auto-submitted.', 'warning');
     }
   }, [timeRemaining, loadedExam, hasSubmitted, isSubmitting, handleStudentSubmit, showToast]);
 
