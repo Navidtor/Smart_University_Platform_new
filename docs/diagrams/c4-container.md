@@ -14,7 +14,7 @@ graph TB
     end
 
     subgraph Frontend["📱 Frontend Layer"]
-        SPA["React SPA<br/>───────────<br/>Vite + TypeScript<br/>───────────<br/>:5173"]
+        SPA["React SPA<br/>───────────<br/>Vite + TypeScript<br/>TailwindCSS<br/>───────────<br/>:5173 dev / :3200 docker"]
     end
 
     subgraph Gateway["🚪 API Gateway Layer"]
@@ -26,11 +26,11 @@ graph TB
         
         BOOK["Booking Service<br/>───────────<br/>Resource Management<br/>Reservation System<br/>───────────<br/>:8082"]
         
-        EXAM["Exam Service<br/>───────────<br/>State Pattern<br/>Circuit Breaker<br/>───────────<br/>:8083"]
+        EXAM["Exam Service<br/>───────────<br/>State Pattern<br/>Circuit Breaker<br/>───────────<br/>:8085"]
         
-        MARKET["Marketplace<br/>───────────<br/>Saga Orchestrator<br/>Product Catalog<br/>───────────<br/>:8084"]
+        MARKET["Marketplace<br/>───────────<br/>Saga Orchestrator<br/>Product Catalog<br/>───────────<br/>:8083"]
         
-        PAY["Payment Service<br/>───────────<br/>Strategy Pattern<br/>Mock Payments<br/>───────────<br/>:8085"]
+        PAY["Payment Service<br/>───────────<br/>Strategy Pattern<br/>Mock Payments<br/>───────────<br/>:8084"]
         
         NOTIF["Notification<br/>───────────<br/>Event Listener<br/>Observer Pattern<br/>───────────<br/>:8086"]
         
@@ -101,9 +101,9 @@ graph TB
 | **API Gateway** | 8080 | - | Gateway, Filter | Routing, JWT validation, RBAC |
 | **Auth Service** | 8081 | PostgreSQL | Repository | User registration, JWT issuance |
 | **Booking Service** | 8082 | PostgreSQL | Repository | Resource management, reservations |
-| **Exam Service** | 8083 | PostgreSQL | State, Circuit Breaker | Exam lifecycle, submissions |
-| **Marketplace** | 8084 | PostgreSQL + Redis | Saga | Products, orders, checkout |
-| **Payment Service** | 8085 | PostgreSQL | Strategy | Payment authorization |
+| **Exam Service** | 8085 | PostgreSQL | State, Circuit Breaker | Exam lifecycle, submissions |
+| **Marketplace** | 8083 | PostgreSQL + Redis | Saga | Products, orders, checkout |
+| **Payment Service** | 8084 | PostgreSQL | Strategy | Payment authorization |
 | **Notification** | 8086 | PostgreSQL | Observer | Event logging, notifications |
 | **Dashboard** | 8087 | PostgreSQL | Repository | Sensors, shuttle tracking |
 
